@@ -52,6 +52,12 @@ export default function PropertyPreview({
         </div>
       )}
 
+      {property.availability === "reserved" && (
+        <div className="bg-yellow-500/15 px-3 py-1.5 text-center text-[11px] font-semibold tracking-wide text-yellow-200">
+          RESERVED · the owner has agreed a deal with another tenant
+        </div>
+      )}
+
       <div className={`px-3 pt-3 ${photos.length === 0 ? "pr-9" : ""}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

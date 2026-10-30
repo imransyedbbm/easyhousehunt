@@ -69,14 +69,18 @@ function App() {
 
   async function fetchProperties() {
     try {
-      const { data, error } = await supabase
+      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price";
+      const query = (fields: string) => supabase
         .from("properties")
-        .select("id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price")
+        .select(fields)
         .eq("market", "india")
         .eq("status", "approved")
         .not("latitude", "is", null)
         .not("longitude", "is", null)
         .limit(100);
+      // Let-out homes leave the map; falls back if the availability column isn't there yet.
+      let { data, error } = await query(FIELDS + ", availability").neq("availability", "let_out");
+      if (error) ({ data, error } = await query(FIELDS));
 
       if (error) { console.error("Supabase error:", error.message); setProperties([]); return; }
 
@@ -99,6 +103,7 @@ function App() {
         property_type: p.property_type ?? "Apartment",
         occupancy: p.occupancy ?? null,
         is_sample: p.is_sample ?? false,
+        availability: p.availability ?? "available",
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,
       }));

@@ -42,6 +42,11 @@ export default function PropertyList({ properties, onSelect }: Props) {
               SAMPLE · NOT A REAL LISTING
             </span>
           )}
+          {p.availability === "reserved" && (
+            <span className="mb-1 ml-1 inline-block rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-yellow-300">
+              RESERVED · DEAL IN PROGRESS
+            </span>
+          )}
           <h3 className="text-white font-semibold text-sm pr-8">{p.title || "Untitled"}</h3>
           <p className="text-green-400 font-bold">{formatPrice(p)}</p>
           {p.property_type === "PG" ? (

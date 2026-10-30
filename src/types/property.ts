@@ -2,6 +2,7 @@ export type Property = {
   listing_type?: string | null;
   sale_price?: number | null;
   is_sample?: boolean | null;
+  availability?: "available" | "reserved" | "let_out" | string | null;
   distance_m?: number | null;
   property_type?: string | null;
   occupancy?: string | null;

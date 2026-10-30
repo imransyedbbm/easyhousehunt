@@ -18,6 +18,18 @@ export default function PropertyDetail({
   onConnectClick: () => void;
 }) {
   const { user } = useAuth();
+  // A reserved listing stays open only to people already talking to the owner.
+  const [hasThread, setHasThread] = useState(false);
+  useEffect(() => {
+    setHasThread(false);
+    if (!user || property.availability !== "reserved") return;
+    supabase.from("messages").select("id", { count: "exact", head: true })
+      .eq("property_id", property.id)
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .then(({ count }) => setHasThread((count ?? 0) > 0));
+  }, [user?.id, property.id, property.availability]);
+  const reservedForOthers =
+    property.availability === "reserved" && property.landlord_id !== user?.id && !hasThread;
   const [saved, setSaved] = useState(false);
 
   useEffect(() => { addRecent(property.id); }, [property.id]);
@@ -139,12 +151,17 @@ export default function PropertyDetail({
         )}
 
         {/* CTA */}
+        {reservedForOthers && (
+          <p className="mt-6 rounded-xl bg-yellow-500/10 border border-yellow-500/30 px-4 py-3 text-sm text-yellow-200">
+            ⏳ <b>Reserved.</b> The owner has agreed a deal with another tenant. If it falls through, this listing will reopen. Save it to find it again easily.
+          </p>
+        )}
         <button
-          onClick={property.is_sample ? undefined : onConnectClick}
-          disabled={!!property.is_sample}
+          onClick={property.is_sample || reservedForOthers ? undefined : onConnectClick}
+          disabled={!!property.is_sample || reservedForOthers}
           className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? "📞 Contact the seller" : "📞 Connect with Owner") : "🔐 Login to Connect"}
+          {reservedForOthers ? "Reserved · not taking new enquiries" : property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? "📞 Contact the seller" : "📞 Connect with Owner") : "🔐 Login to Connect"}
         </button>
       </div>
     </div>
