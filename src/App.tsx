@@ -21,6 +21,7 @@ import MobileLayout from "./components/MobileLayout";
 import { supabase } from "./integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import RentRight from "./pages/RentRight";
+import { OPEN_RENTRIGHT, useAgreedDeals } from "@/lib/deals";
 import { Property } from "./types/property";
 
 function App() {
@@ -48,6 +49,20 @@ function App() {
   const [tenantDashOpen, setTenantDashOpen] = useState(false);
   const [adminDashOpen, setAdminDashOpen] = useState(false);
   const [rentRightOpen, setRentRightOpen] = useState(false);
+  const [rentRightDealId, setRentRightDealId] = useState<string | undefined>();
+  const agreedDeals = useAgreedDeals();
+  const rentRightUnlocked = agreedDeals.length > 0;
+  useEffect(() => {
+    const open = (e: Event) => {
+      setRentRightDealId((e as CustomEvent).detail?.dealId);
+      setChatProperty(null);
+      setInboxOpen(false);
+      setOwnerDashOpen(false);
+      setRentRightOpen(true);
+    };
+    window.addEventListener(OPEN_RENTRIGHT, open);
+    return () => window.removeEventListener(OPEN_RENTRIGHT, open);
+  }, []);
   const [isAdmin, setIsAdmin] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", propertyType: "All", occupancy: []
@@ -195,7 +210,8 @@ function App() {
     onOwnerDash: () => setOwnerDashOpen(true),
     isAdmin,
     onAdminDash: () => setAdminDashOpen(true),
-    onRentRight: () => setRentRightOpen(true),
+    onRentRight: () => { setRentRightDealId(undefined); setRentRightOpen(true); },
+    rentRightUnlocked,
     detailProperty,
     onCloseDetail: () => setDetailProperty(null),
     onConnectOwner: handleConnectWithOwner,
@@ -237,9 +253,10 @@ function App() {
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
                         📋 My Dashboard
                       </button>
-                      <button onClick={() => { setRentRightOpen(true); setMenuOpen(false); }}
-                        className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                        ⚖️ RentRight
+                      <button onClick={() => { setRentRightDealId(undefined); setRentRightOpen(true); setMenuOpen(false); }}
+                        title={rentRightUnlocked ? "Draft your rental agreement" : "Unlocks once you and the other party agree a deal"}
+                        className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
+                        ⚖️ RentRight {!rentRightUnlocked && <span className="ml-auto text-xs">🔒</span>}
                       </button>
                       {effectiveAdmin && (
                         <button onClick={() => { setAdminDashOpen(true); setMenuOpen(false); }}
@@ -336,7 +353,7 @@ function App() {
       {ownerDashOpen && <OwnerDashboard onClose={() => { setOwnerDashOpen(false); fetchProperties(); }} />}
       {tenantDashOpen && <TenantDashboard onClose={() => setTenantDashOpen(false)} />}
       {adminDashOpen && <AdminDashboard onClose={() => { setAdminDashOpen(false); fetchProperties(); }} />}
-      {rentRightOpen && <RentRight onClose={() => setRentRightOpen(false)} />}
+      {rentRightOpen && <RentRight deals={agreedDeals} initialDealId={rentRightDealId} onClose={() => setRentRightOpen(false)} />}
     </>
   );
 }

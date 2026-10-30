@@ -1,6 +1,7 @@
 import { useState } from "react";
 import jsPDF from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
+import type { Deal } from "@/lib/deals";
 
 async function callGemini(prompt: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("gemini-proxy", {
@@ -33,10 +34,30 @@ const defaultForm: FormData = {
   pets: "Not allowed", increment: "5%", special: "",
 };
 
-export default function RentRight({ onClose }: { onClose: () => void }) {
+function prefillFromDeal(deal: Deal | undefined): FormData {
+  const p = deal?.properties;
+  if (!p) return defaultForm;
+  const furnishing = (p.furnishing || "").toLowerCase();
+  const typeName = (p.property_type || "apartment").replace(/^\w/, c => c.toUpperCase());
+  return {
+    ...defaultForm,
+    address: [p.title, p.address].filter(Boolean).join(", "),
+    propType: p.bhk ? `${p.bhk} BHK ${typeName}` : typeName,
+    furnishing: furnishing.startsWith("fully") ? "Fully Furnished"
+      : furnishing.startsWith("semi") ? "Semi Furnished"
+      : furnishing.startsWith("un") ? "Unfurnished" : defaultForm.furnishing,
+    rent: p.rent != null ? String(p.rent) : "",
+    deposit: p.deposit != null ? String(p.deposit) : "",
+  };
+}
+
+export default function RentRight({ onClose, deals, initialDealId }: { onClose: () => void; deals: Deal[]; initialDealId?: string }) {
+  const startDeal = deals.find(d => d.id === initialDealId) ?? deals[0];
+  const [dealId, setDealId] = useState<string | undefined>(startDeal?.id);
   const [tab, setTab] = useState<Tab>("generate");
   const [step, setStep] = useState<Step>(1);
-  const [form, setForm] = useState<FormData>(defaultForm);
+  const [form, setForm] = useState<FormData>(() => prefillFromDeal(startDeal));
+  const chooseDeal = (id: string) => { setDealId(id); setForm(prefillFromDeal(deals.find(d => d.id === id))); setStep(1); };
   const [loading, setLoading] = useState(false);
   const [agreement, setAgreement] = useState("");
   const [reviewText, setReviewText] = useState("");
@@ -131,7 +152,29 @@ Agreement: ${reviewText}`;
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-light">✕</button>
         </div>
 
+        {deals.length === 0 ? (
+          <div className="p-8 text-center space-y-3">
+            <p className="text-3xl">🔒</p>
+            <p className="font-semibold text-gray-900">RentRight unlocks once a deal is agreed</p>
+            <p className="text-sm text-gray-500">
+              Chat with the owner or tenant, then both of you tap <b>🤝 Mark deal agreed</b> in the conversation.
+              RentRight will then draft the rental agreement with the property details filled in.
+            </p>
+            <button onClick={onClose} className="mt-2 px-5 py-2 rounded-lg bg-gray-900 text-white text-sm">Got it</button>
+          </div>
+        ) : (
         <div className="p-5">
+          {deals.length > 1 && (
+            <div className="mb-4">
+              <label className="text-xs text-gray-500">Agreement for</label>
+              <select value={dealId} onChange={e => chooseDeal(e.target.value)}
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+                {deals.map(d => (
+                  <option key={d.id} value={d.id}>{d.properties?.title || d.properties?.address || "Property"}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
             {(["generate", "review"] as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)}
@@ -341,6 +384,7 @@ Agreement: ${reviewText}`;
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

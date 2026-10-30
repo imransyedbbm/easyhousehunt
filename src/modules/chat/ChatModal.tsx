@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { openRentRight, useDeal } from "@/lib/deals";
 import { setActiveThread, threadKey, useMessageVersion } from "@/lib/messageStore";
 
 interface Message {
@@ -50,6 +51,7 @@ export default function ChatModal({
   const [step, setStep] = useState<"intro" | "chat">("intro");
   const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const dealState = useDeal(propertyId, receiverId);
 
   const fetchMessages = async () => {
     if (!user || !receiverId) {
@@ -208,6 +210,7 @@ export default function ChatModal({
         {/* Chat */}
         {loaded && step === "chat" && (
           <>
+            <DealBar state={dealState} otherLabel={otherLabel === "Tenant" ? "the tenant" : "the owner"} />
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
               {messages.map((msg) => {
                 const isMine = msg.sender_id === user?.id;
@@ -263,6 +266,51 @@ export default function ChatModal({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function DealBar({ state, otherLabel }: { state: ReturnType<typeof useDeal>; otherLabel: string }) {
+  const { deal, busy, error, agree, withdraw, mine, theirs } = state;
+  const btn = "text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50 whitespace-nowrap";
+
+  let body;
+  if (deal?.agreed_at) {
+    body = (
+      <>
+        <p className="text-xs text-green-300 flex-1">✅ Deal agreed by both of you</p>
+        <button onClick={() => openRentRight(deal.id)} className={`${btn} bg-green-600 hover:bg-green-500 text-white`}>
+          ⚖️ Create agreement
+        </button>
+      </>
+    );
+  } else if (mine) {
+    body = (
+      <>
+        <p className="text-xs text-gray-300 flex-1">🤝 You marked the deal as agreed. Waiting for {otherLabel} to confirm.</p>
+        <button onClick={withdraw} disabled={busy} className={`${btn} text-gray-300 hover:text-white underline`}>Undo</button>
+      </>
+    );
+  } else if (theirs) {
+    body = (
+      <>
+        <p className="text-xs text-orange-200 flex-1">🤝 {otherLabel[0].toUpperCase() + otherLabel.slice(1)} has agreed to the deal.</p>
+        <button onClick={agree} disabled={busy} className={`${btn} bg-orange-500 hover:bg-orange-600 text-white`}>Confirm deal</button>
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <p className="text-xs text-gray-400 flex-1">Agreed on rent and terms?</p>
+        <button onClick={agree} disabled={busy} className={`${btn} bg-gray-700 hover:bg-gray-600 text-white`}>🤝 Mark deal agreed</button>
+      </>
+    );
+  }
+
+  return (
+    <div className="px-4 py-2 border-b border-gray-700 bg-gray-800/60">
+      <div className="flex items-center gap-2">{body}</div>
+      {error && <p className="text-[11px] text-red-300 mt-1">{error}</p>}
     </div>
   );
 }
