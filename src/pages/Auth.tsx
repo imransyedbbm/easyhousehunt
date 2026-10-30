@@ -18,7 +18,7 @@ export default function Auth() {
       <div className="bg-[#0f172a] p-8 rounded-xl w-[400px] text-center shadow-lg">
 
         <h1 className="text-2xl font-bold mb-6">
-          Welcome to RentEase
+          Welcome to EasyHouseHunt
         </h1>
 
         <button
