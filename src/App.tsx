@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import MapView from "./components/map/MapView";
 import UnreadBadge from "@/components/UnreadBadge";
@@ -212,7 +213,7 @@ function App() {
         <div className="w-[350px] bg-black text-white overflow-y-auto flex flex-col">
           <div className="p-4 space-y-2">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-orange-500 font-bold text-lg">EasyHouseHunt</h1>
+              <h1><BrandLogo size="md" /></h1>
               {user ? (
                 <div className="relative">
                   <button

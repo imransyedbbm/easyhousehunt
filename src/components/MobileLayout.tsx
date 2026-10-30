@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import { useState, useRef } from "react";
 import MapView from "./map/MapView";
 import UnreadBadge from "@/components/UnreadBadge";
@@ -81,7 +82,7 @@ export default function MobileLayout({
 
       {/* TOP BAR */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
-        <h1 className="text-orange-500 font-bold text-base">EasyHouseHunt</h1>
+        <h1><BrandLogo size="sm" /></h1>
         <div className="flex items-center gap-2">
           {user ? (
             <>

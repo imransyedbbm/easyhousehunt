@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Home, LogIn, LogOut, User, LayoutDashboard, Shield, Menu, X } from 'lucide-react';
+import { LogIn, LogOut, User, LayoutDashboard, Shield, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -13,8 +13,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2 font-heading text-xl font-bold text-primary">
-          <Home className="h-6 w-6" />
-          RentEase
+          <BrandLogo size="md" />
         </Link>
 
         <div className="hidden md:flex items-center gap-4">
