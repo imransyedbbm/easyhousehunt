@@ -271,18 +271,45 @@ export default function ChatModal({
 }
 
 function DealBar({ state, otherLabel }: { state: ReturnType<typeof useDeal>; otherLabel: string }) {
-  const { deal, busy, error, agree, withdraw, mine, theirs } = state;
+  const { deal, busy, error, agree, withdraw, close, mine, theirs, iAmLandlord, availability } = state;
   const btn = "text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50 whitespace-nowrap";
 
   let body;
+  let extra = null;
   if (deal?.agreed_at) {
     body = (
       <>
-        <p className="text-xs text-green-300 flex-1">✅ Deal agreed by both of you</p>
+        <p className="text-xs text-green-300 flex-1">
+          {availability === "let_out" ? "🏠 Let out to this tenant" : "✅ Deal agreed by both of you"}
+        </p>
         <button onClick={() => openRentRight(deal.id)} className={`${btn} bg-green-600 hover:bg-green-500 text-white`}>
           ⚖️ Create agreement
         </button>
       </>
+    );
+    if (iAmLandlord && availability !== "let_out") {
+      extra = (
+        <div className="flex items-center gap-3 mt-1.5">
+          <button disabled={busy} onClick={() => { if (confirm("Mark as let out? The listing will be removed from the map.")) void close("let_out"); }}
+            className="text-[11px] text-gray-300 hover:text-white underline">Mark as let out</button>
+          <button disabled={busy} onClick={() => { if (confirm("Cancel this deal? The listing will be open to other tenants again.")) void close("cancel"); }}
+            className="text-[11px] text-red-300 hover:text-red-200 underline">Cancel deal</button>
+        </div>
+      );
+    }
+  } else if (!iAmLandlord && availability !== "available") {
+    body = (
+      <p className="text-xs text-yellow-200 flex-1">
+        {availability === "let_out"
+          ? "🏠 This property has been let out to another tenant."
+          : "⏳ The owner has agreed a deal with another tenant, so this property is reserved. If that falls through, it will reopen and you can continue here."}
+      </p>
+    );
+  } else if (iAmLandlord && availability !== "available") {
+    body = (
+      <p className="text-xs text-yellow-200 flex-1">
+        {availability === "let_out" ? "🏠 You've let this property out." : "⏳ You've agreed a deal with another tenant. Cancel that deal first to agree one here."}
+      </p>
     );
   } else if (mine) {
     body = (
@@ -310,6 +337,7 @@ function DealBar({ state, otherLabel }: { state: ReturnType<typeof useDeal>; oth
   return (
     <div className="px-4 py-2 border-b border-gray-700 bg-gray-800/60">
       <div className="flex items-center gap-2">{body}</div>
+      {extra}
       {error && <p className="text-[11px] text-red-300 mt-1">{error}</p>}
     </div>
   );
