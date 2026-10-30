@@ -15,6 +15,13 @@ export interface Enquiry {
   profiles?: { full_name: string | null };
 }
 
+// Fire-and-forget email notification; never blocks the UI.
+function notify(type: 'enquiry_created' | 'enquiry_status', enquiryId: string) {
+  supabase.functions
+    .invoke('notify-email', { body: { type, enquiry_id: enquiryId } })
+    .then(({ error }) => { if (error) console.warn('notify-email failed:', error); });
+}
+
 export function useEnquiries(mode: 'tenant' | 'landlord') {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,6 +78,7 @@ export function useEnquiries(mode: 'tenant' | 'landlord') {
       return null;
     }
 
+    if (data?.id) notify('enquiry_created', data.id);
     toast({ title: 'Enquiry sent!', description: 'You can now chat with the owner.' });
     await fetchEnquiries();
     return data;
@@ -84,6 +92,7 @@ export function useEnquiries(mode: 'tenant' | 'landlord') {
 
     if (error) toast({ variant: 'destructive', title: 'Failed to update status' });
     else {
+      notify('enquiry_status', enquiryId);
       setEnquiries(prev => prev.map(e => e.id === enquiryId ? { ...e, status } : e));
     }
   };
