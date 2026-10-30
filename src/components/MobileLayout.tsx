@@ -23,6 +23,7 @@ export default function MobileLayout({
   isAdmin,
   onAdminDash,
   onRentRight,
+  rentRightUnlocked = false,
   detailProperty,
   onCloseDetail,
   onConnectOwner,
@@ -40,6 +41,7 @@ export default function MobileLayout({
   isAdmin: boolean;
   onAdminDash: () => void;
   onRentRight: () => void;
+  rentRightUnlocked?: boolean;
   detailProperty: Property | null;
   onCloseDetail: () => void;
   onConnectOwner: () => void;
@@ -114,8 +116,8 @@ export default function MobileLayout({
                       </button>
                     )}
                     <button onClick={() => { onRentRight(); setMobileMenuOpen(false); }}
-                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                      🛡️ RentRight
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
+                      ⚖️ RentRight {!rentRightUnlocked && <span className="ml-auto text-xs">🔒</span>}
                     </button>
                     <div className="border-t border-gray-700 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
                       <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-white">Privacy</a>
