@@ -1,3 +1,4 @@
+import { shareListing, whatsappShareUrl } from "@/lib/share";
 import { availabilityLabel } from "@/lib/requirements";
 import { useEffect, useState } from "react";
 import { Property } from "../../types/property";
@@ -19,6 +20,7 @@ export default function PropertyDetail({
   onConnectClick: () => void;
 }) {
   const { user } = useAuth();
+  const [shareNote, setShareNote] = useState("");
   // A reserved listing stays open only to people already talking to the owner.
   const [hasThread, setHasThread] = useState(false);
   useEffect(() => {
@@ -87,6 +89,24 @@ export default function PropertyDetail({
           </div>
           {!property.is_sample && <SaveButton propertyId={property.id} className="flex-shrink-0" />}
         </div>
+
+        {!property.is_sample && (
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={async () => {
+                const r = await shareListing(property);
+                if (r === "copied") { setShareNote("Link copied"); setTimeout(() => setShareNote(""), 2000); }
+              }}
+              className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl py-2 text-sm font-semibold"
+            >
+              🔗 {shareNote || "Share"}
+            </button>
+            <a href={whatsappShareUrl(property)} target="_blank" rel="noopener noreferrer"
+              className="flex-1 text-center bg-green-700 hover:bg-green-600 rounded-xl py-2 text-sm font-semibold">
+              WhatsApp
+            </a>
+          </div>
+        )}
 
         {/* Key details */}
         <div className="flex gap-3 mt-3 flex-wrap">

@@ -89,7 +89,35 @@ function App() {
 
       if (error) { console.error("Supabase error:", error.message); setProperties([]); return; }
 
-      const mapped: Property[] = (data || []).map((p: any) => ({
+      const mapped: Property[] = (data || []).map(toProperty);
+
+      // Once there are enough real listings, the labelled samples disappear on their own
+      const realCount = mapped.filter((p) => !p.is_sample).length;
+      setProperties(realCount >= 15 ? mapped.filter((p) => !p.is_sample) : mapped);
+      openSharedListing(mapped);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Shared links (easyhousehunt.com/l/<id>) land on /?p=<id>: open that listing.
+  async function openSharedListing(loaded: Property[]) {
+    const id = new URLSearchParams(window.location.search).get("p");
+    if (!id) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    let found = loaded.find((x) => x.id === id) ?? null;
+    if (!found) {
+      const { data } = await supabase.from("properties").select("*").eq("id", id).eq("status", "approved").maybeSingle();
+      if (data) found = toProperty(data);
+    }
+    if (found) { setSelectedProperty(found); setDetailProperty(found); }
+  }
+
+  function toProperty(p: any): Property {
+    return {
         id: String(p.id),
         title: p.title ?? "Untitled",
         rent: p.rent ?? 0,
@@ -113,17 +141,7 @@ function App() {
         preferred_tenants: p.preferred_tenants ?? [],
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,
-      }));
-
-      // Once there are enough real listings, the labelled samples disappear on their own
-      const realCount = mapped.filter((p) => !p.is_sample).length;
-      setProperties(realCount >= 15 ? mapped.filter((p) => !p.is_sample) : mapped);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setProperties([]);
-    } finally {
-      setLoading(false);
-    }
+    };
   }
 
   useEffect(() => { fetchProperties(); }, []);

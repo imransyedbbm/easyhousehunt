@@ -222,6 +222,14 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
           <p className="text-xs text-red-400 mt-3">No photos</p>
         )}
 
+        {l.status === "approved" && (
+          <button
+            onClick={() => navigator.clipboard.writeText(`https://easyhousehunt.com/l/${l.id}`).then(() => alert("Link copied:\nhttps://easyhousehunt.com/l/" + l.id))}
+            className="mt-3 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1.5">
+            🔗 Copy share link
+          </button>
+        )}
+
         <div className="flex flex-wrap items-center gap-2 mt-3 text-xs">
           {l.latitude && l.longitude ? (
             <a
