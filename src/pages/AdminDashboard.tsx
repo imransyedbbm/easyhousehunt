@@ -19,6 +19,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [requirements, setRequirements] = useState<any[]>([]);
+  const [ownerContacts, setOwnerContacts] = useState<Record<string, any>>({});
   const [demandArea, setDemandArea] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,9 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(500);
+
+    const { data: contacts } = await (supabase as any).from("listing_owner_contacts").select("*");
+    setOwnerContacts(Object.fromEntries((contacts || []).map((c: any) => [c.property_id, c])));
 
     setRequirements(reqs || []);
     setListings(props || []);
@@ -194,6 +198,13 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
             <button onClick={() => deleteListing(l.id)} className="text-red-400 hover:text-red-300 text-xs">🗑</button>
           </div>
         </div>
+
+        {ownerContacts[l.id] && (
+          <div className="mt-3 rounded-lg bg-purple-900/30 border border-purple-700/50 px-3 py-2 text-xs text-purple-100 flex items-center justify-between gap-2">
+            <span>🔒 Posted for owner: <b>{ownerContacts[l.id].owner_name || "—"}</b> · {ownerContacts[l.id].owner_phone}</span>
+            <a href={`tel:${ownerContacts[l.id].owner_phone}`} className="underline shrink-0">Call</a>
+          </div>
+        )}
 
         {l.description && (
           <p className="text-gray-300 text-sm mt-3 whitespace-pre-line">{l.description}</p>

@@ -19,7 +19,7 @@ export default function PhotoGallery({
       <div
         className={`flex w-full items-center justify-center bg-gray-800 text-sm text-gray-500 ${heightClass} ${roundedClass}`}
       >
-        No photo
+        📷 Photos on request · ask the owner in chat
       </div>
     );
   }
