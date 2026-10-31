@@ -1,3 +1,4 @@
+import { openRequirement } from "@/lib/requirements";
 import BrandLogo from "@/components/BrandLogo";
 import { useState, useRef } from "react";
 import MapView from "./map/MapView";
@@ -116,6 +117,10 @@ export default function MobileLayout({
                         ⚙️ Admin Panel
                       </button>
                     )}
+                    <button onClick={() => { openRequirement(); setMobileMenuOpen(false); }}
+                      className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
+                      📝 My requirements
+                    </button>
                     <button onClick={() => { onRentRight(); setMobileMenuOpen(false); }}
                       className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
                       ⚖️ RentRight {!rentRightUnlocked && <span className="ml-auto text-xs">🔒</span>}
@@ -161,10 +166,14 @@ export default function MobileLayout({
       </div>
 
       {/* LIST YOUR PROPERTY FAB */}
-      <div className="absolute left-4 z-20" style={{bottom: `calc(${sheetHeights[sheetState]} + 16px)`, transition: "bottom 0.3s ease"}}>
+      <div className="absolute left-4 z-20 flex gap-2" style={{bottom: `calc(${sheetHeights[sheetState]} + 16px)`, transition: "bottom 0.3s ease"}}>
         <button onClick={onListProperty}
           className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
           + List Property
+        </button>
+        <button onClick={openRequirement}
+          className="bg-gray-900/95 hover:bg-gray-800 border border-gray-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
+          📝 Post Requirement
         </button>
       </div>
 

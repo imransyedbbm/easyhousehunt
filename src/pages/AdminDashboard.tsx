@@ -3,7 +3,7 @@ import EditListingModal from "@/components/EditListingModal";
 import { formatPrice } from "@/lib/price";
 import { supabase } from "@/integrations/supabase/client";
 
-type Tab = "pending" | "listings" | "messages" | "users";
+type Tab = "pending" | "listings" | "messages" | "users" | "demand";
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-yellow-900 text-yellow-300",
@@ -18,6 +18,8 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [listings, setListings] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [requirements, setRequirements] = useState<any[]>([]);
+  const [demandArea, setDemandArea] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -51,6 +53,14 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       .order("id", { ascending: false })
       .limit(200);
 
+    const { data: reqs } = await (supabase as any)
+      .from("requirements")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    setRequirements(reqs || []);
     setListings(props || []);
     setMessages(msgs || []);
     setUsers(profs || []);
@@ -84,6 +94,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     live: listings.filter((l) => l.status === "approved").length,
     messages: messages.length,
     users: users.length,
+    demand: requirements.length,
   };
 
   const updateStatus = async (l: any, status: "approved" | "rejected", reason: string | null) => {
@@ -97,6 +108,14 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     if (error || !data || data.length === 0) {
       alert("Could not update listing: " + (error?.message ?? "no permission (are you signed in as admin?)"));
       return;
+    }
+    if (status === "approved") {
+      // Email tenants whose saved requirement matches this home (fire-and-forget).
+      supabase.functions.invoke("notify-matches", { body: { property_id: l.id } })
+        .then(({ data, error }) => {
+          if (error) console.warn("notify-matches:", error);
+          else if (data?.sent) console.info(`Alerted ${data.sent} matching tenant(s)`);
+        });
     }
     setListings((prev) =>
       prev.map((x) =>
@@ -136,6 +155,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     { key: "listings", label: "Listings", count: listings.length },
     { key: "messages", label: "Messages", count: stats.messages },
     { key: "users", label: "Users", count: stats.users },
+    { key: "demand", label: "Demand", count: stats.demand },
   ];
 
   const renderListing = (l: any) => {
@@ -342,6 +362,64 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                 ))}
+
+              {tab === "demand" && (() => {
+                const counts: Record<string, number> = {};
+                requirements.forEach((r) => (r.areas || []).forEach((a: any) => { counts[a.name] = (counts[a.name] || 0) + 1; }));
+                const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12);
+                const shown = demandArea ? requirements.filter((r) => (r.areas || []).some((a: any) => a.name === demandArea)) : requirements;
+                const inr = (n: number) => "₹" + Number(n).toLocaleString("en-IN");
+                const csv = () => {
+                  const rows = [["Name", "Phone", "Areas", "Radius km", "Type", "BHK", "Max rent", "Furnishing", "Move-in", "Tenant", "Notes", "Posted"]]
+                    .concat(shown.map((r) => [r.name, r.phone, (r.areas || []).map((a: any) => a.name).join(" / "), r.radius_km, r.property_type,
+                      (r.bhk || []).join("/"), r.budget_max, (r.furnishing || []).join("/"), r.move_in, r.tenant_type, r.notes, r.created_at?.slice(0, 10)]
+                      .map((v) => v ?? "")));
+                  const body = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(new Blob([body], { type: "text/csv" }));
+                  a.download = `easyhousehunt-demand-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                };
+                return (
+                  <div className="space-y-3">
+                    <div className="bg-gray-800 rounded-xl p-4">
+                      <p className="text-xs text-gray-400 mb-2">Most wanted areas (active requirements). Tap to filter.</p>
+                      <div className="flex flex-wrap gap-2">
+                        {top.map(([name, n]) => (
+                          <button key={name} onClick={() => setDemandArea(demandArea === name ? "" : name)}
+                            className={`text-xs px-2.5 py-1 rounded-full ${demandArea === name ? "bg-orange-500 text-white" : "bg-gray-700 text-gray-200"}`}>
+                            {name} · {n}
+                          </button>
+                        ))}
+                        {top.length === 0 && <span className="text-xs text-gray-500">No requirements yet.</span>}
+                      </div>
+                    </div>
+                    {shown.length > 0 && (
+                      <button onClick={csv} className="text-xs text-orange-400 hover:text-orange-300">⬇ Download {shown.length} as CSV</button>
+                    )}
+                    {shown.map((r) => (
+                      <div key={r.id} className="bg-gray-800 rounded-xl p-4 text-sm">
+                        <div className="flex justify-between gap-2">
+                          <p className="font-semibold">{r.name || "Unnamed"}{r.phone ? <span className="text-gray-400 font-normal"> · {r.phone}</span> : null}</p>
+                          <span className="text-xs text-gray-500 shrink-0">{new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                        </div>
+                        <p className="text-gray-300 mt-1">
+                          {r.property_type === "Any" ? "Any type" : r.property_type}
+                          {r.bhk?.length ? ` · ${r.bhk.map((b: number) => (b === 4 ? "4+" : b)).join("/")} BHK` : ""}
+                          {r.budget_max ? ` · up to ${inr(r.budget_max)}` : ""}
+                          {r.furnishing?.length ? ` · ${r.furnishing.join("/")}` : ""}
+                        </p>
+                        <p className="text-gray-400 text-xs mt-1">
+                          📍 {(r.areas || []).map((a: any) => a.name).join(", ")} (within {r.radius_km} km)
+                          {r.move_in ? ` · move-in ${new Date(r.move_in).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+                          {r.tenant_type ? ` · ${r.tenant_type}` : ""}
+                        </p>
+                        {r.notes && <p className="text-gray-400 text-xs mt-1 italic">“{r.notes}”</p>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {tab === "users" &&
                 users.map((u) => (

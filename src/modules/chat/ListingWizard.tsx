@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/ui/AuthModal";
+import { demandCount } from "@/lib/requirements";
 
 const PROJECTS = [
   "Embassy Lake Terraces", "RMZ Latitude", "Godrej Woodman Estate",
@@ -164,6 +165,17 @@ export default function ListingWizard({ onClose, onSuccess }: {
     if (err) { setError(err.message); return; }
     onSuccess?.();
   };
+
+  // Show owners how many tenants want a home like theirs (counts only).
+  const [demand, setDemand] = useState<number | null>(null);
+  useEffect(() => {
+    if (step !== 5 || listingType === "sale" || !form.latitude || !form.longitude) return;
+    demandCount({
+      lat: Number(form.latitude), lng: Number(form.longitude),
+      propertyType: form.property_type, bhk: form.property_type === "PG" ? null : parseInt(form.bhk) || null,
+      rent: parseInt(form.rent) || null, furnishing: form.furnishing,
+    }).then(setDemand);
+  }, [step]);
 
   const handleSubmit = async () => {
     if (!user) { setShowAuth(true); return; }
@@ -495,6 +507,12 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   </button>
                 </div>
               </div>
+
+              {demand != null && demand > 0 && (
+                <div className="rounded-lg bg-green-900/30 border border-green-700/50 p-3 text-xs text-green-200">
+                  📈 <b>{demand} tenant{demand > 1 ? "s are" : " is"} looking</b> for a home like this nearby. We'll alert them as soon as your listing is approved.
+                </div>
+              )}
 
               {/* Summary */}
               <div className="bg-gray-800 rounded-lg p-3 text-xs space-y-1">
