@@ -1,3 +1,4 @@
+import { linkKey } from "@/lib/share";
 import BrandLogo from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import MapView from "./components/map/MapView";
@@ -83,7 +84,8 @@ function App() {
         .not("longitude", "is", null)
         .limit(100);
       // Let-out homes leave the map; falls back if the availability column isn't there yet.
-      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out");
+      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code").neq("availability", "let_out");
+      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS));
 
@@ -105,12 +107,13 @@ function App() {
 
   // Shared links (easyhousehunt.com/l/<id>) land on /?p=<id>: open that listing.
   async function openSharedListing(loaded: Property[]) {
-    const id = new URLSearchParams(window.location.search).get("p");
-    if (!id) return;
-    window.history.replaceState(null, "", window.location.pathname);
-    let found = loaded.find((x) => x.id === id) ?? null;
+    const key = linkKey(new URLSearchParams(window.location.search).get("p") || "");
+    if (new URLSearchParams(window.location.search).has("p")) window.history.replaceState(null, "", window.location.pathname);
+    if (!key) return;
+    let found = loaded.find((x) => (key.code ? x.share_code === key.code : x.id === key.id)) ?? null;
     if (!found) {
-      const { data } = await supabase.from("properties").select("*").eq("id", id).eq("status", "approved").maybeSingle();
+      const q = (supabase as any).from("properties").select("*").eq("status", "approved");
+      const { data } = await (key.code ? q.eq("share_code", key.code) : q.eq("id", key.id)).maybeSingle();
       if (data) found = toProperty(data);
     }
     if (found) { setSelectedProperty(found); setDetailProperty(found); }
@@ -136,6 +139,7 @@ function App() {
         property_type: p.property_type ?? "Apartment",
         occupancy: p.occupancy ?? null,
         is_sample: p.is_sample ?? false,
+        share_code: p.share_code ?? null,
         availability: p.availability ?? "available",
         availability_date: p.availability_date ?? null,
         preferred_tenants: p.preferred_tenants ?? [],
