@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MAX_PHOTOS, uploadListingPhotos } from "@/lib/photos";
 import { TENANT_TYPES, notifyMatches } from "@/lib/requirements";
+import { maskPhones } from "@/lib/contact";
 
 interface EditProps {
   listing: any;
@@ -141,7 +142,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
         bhk: form.bhk === "" ? null : parseInt(form.bhk),
         area_sqft: parseInt(form.area_sqft) || null,
         furnishing: form.furnishing || null,
-        description: form.description.trim() || null,
+        description: maskPhones(form.description.trim()) || null,
         address: form.address.trim(),
         latitude: toNum(form.latitude),
         longitude: toNum(form.longitude),

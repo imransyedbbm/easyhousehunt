@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/ui/AuthModal";
 import { TENANT_TYPES, demandCount } from "@/lib/requirements";
+import { hasPhone, maskPhones } from "@/lib/contact";
 
 const PROJECTS = [
   "Embassy Lake Terraces", "RMZ Latitude", "Godrej Woodman Estate",
@@ -44,6 +45,18 @@ export default function ListingWizard({ onClose, onSuccess }: {
   const [listingType, setListingType] = useState<"rent" | "sale">("rent");
   const [availableFrom, setAvailableFrom] = useState("");          // "" = available now
   const [preferredTenants, setPreferredTenants] = useState<string[]>([]); // [] = anyone
+  // Admins can post for an owner who has no account; the owner's phone stays private.
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [onBehalf, setOnBehalf] = useState(false);
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle()
+      .then(({ data }) => setIsAdmin(!!(data as any)?.is_admin));
+  }, [user?.id]);
+  const photosOptional = isAdmin && onBehalf;
+  const ownerPhoneOk = !onBehalf || ownerPhone.replace(/\D/g, "").length >= 10;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -139,7 +152,8 @@ export default function ListingWizard({ onClose, onSuccess }: {
       return;
     }
 
-    const { error: err } = await supabase.from("properties").insert({
+    if (!ownerPhoneOk) { setSaving(false); setError("Enter the owner's 10-digit phone number."); return; }
+    const { data: created, error: err } = await supabase.from("properties").insert({
       market: "india",
       title: listingTitle(),
       address: form.address,
@@ -150,7 +164,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
       bhk: parseInt(form.bhk),
       area_sqft: parseInt(form.area_sqft) || null,
       furnishing: form.furnishing,
-      description: form.description,
+      description: maskPhones(form.description),
       latitude: parseFloat(form.latitude) || null,
       longitude: parseFloat(form.longitude) || null,
       amenities,
@@ -165,7 +179,14 @@ export default function ListingWizard({ onClose, onSuccess }: {
         availability_date: availableFrom || null,
         preferred_tenants: form.property_type === "PG" ? [] : preferredTenants,
       } : {}),
-    });
+    }).select("id").single();
+
+    if (!err && onBehalf && created?.id) {
+      const { error: cErr } = await (supabase as any).from("listing_owner_contacts").insert({
+        property_id: created.id, owner_name: ownerName.trim() || null, owner_phone: ownerPhone.trim(),
+      });
+      if (cErr) { setSaving(false); setError("Listing saved, but the owner's phone could not be stored: " + cErr.message); return; }
+    }
 
     setSaving(false);
     if (err) { setError(err.message); return; }
@@ -452,6 +473,9 @@ export default function ListingWizard({ onClose, onSuccess }: {
               <div>
                 <label className="text-sm text-gray-400">Description</label>
                 <textarea className={inp + " mt-1 h-28 resize-none"} placeholder="Lake view, quiet floor, near metro..." value={form.description} onChange={e => set("description", e.target.value)} />
+                {hasPhone(form.description) && (
+                  <p className="text-xs text-yellow-300 mt-1">Phone numbers are hidden from the public listing. Tenants will contact you through chat.</p>
+                )}
               </div>
             </>
           )}
@@ -542,6 +566,24 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 </div>
               </div>
 
+              {isAdmin && (
+                <div className="rounded-lg border border-purple-700/60 bg-purple-900/20 p-3 space-y-2">
+                  <label className="flex items-center gap-2 text-sm text-purple-200">
+                    <input type="checkbox" className="accent-purple-500" checked={onBehalf} onChange={e => setOnBehalf(e.target.checked)} />
+                    <span><b>Admin:</b> posting on behalf of an owner</span>
+                  </label>
+                  {onBehalf && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className={inp} placeholder="Owner name" maxLength={100} value={ownerName} onChange={e => setOwnerName(e.target.value)} />
+                        <input className={inp} placeholder="Owner phone *" inputMode="tel" maxLength={20} value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} />
+                      </div>
+                      <p className="text-[11px] text-purple-300/80">Only admins can see this number. Tenants' chats come to your inbox. Photos are optional.</p>
+                    </>
+                  )}
+                </div>
+              )}
+
               {demand != null && demand > 0 && (
                 <div className="rounded-lg bg-green-900/30 border border-green-700/50 p-3 text-xs text-green-200">
                   📈 <b>{demand} tenant{demand > 1 ? "s are" : " is"} looking</b> for a home like this nearby. We'll alert them as soon as your listing is approved.
@@ -588,9 +630,9 @@ export default function ListingWizard({ onClose, onSuccess }: {
               Next →
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={saving || uploading || photos.length === 0}
+            <button onClick={handleSubmit} disabled={saving || uploading || (photos.length === 0 && !photosOptional) || !ownerPhoneOk}
               className="bg-green-500 hover:bg-green-600 disabled:opacity-40 px-6 py-2 rounded-lg font-semibold">
-              {uploading ? "Uploading..." : saving ? "Submitting..." : photos.length === 0 ? "Add a photo to continue" : "🏠 Submit for review"}
+              {uploading ? "Uploading..." : saving ? "Submitting..." : !ownerPhoneOk ? "Add the owner's phone" : photos.length === 0 && !photosOptional ? "Add a photo to continue" : "🏠 Submit for review"}
             </button>
           )}
         </div>
