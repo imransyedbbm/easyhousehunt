@@ -1,3 +1,4 @@
+import { listingUrl } from "@/lib/share";
 import { useEffect, useMemo, useState } from "react";
 import EditListingModal from "@/components/EditListingModal";
 import { formatPrice } from "@/lib/price";
@@ -224,7 +225,12 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
         {l.status === "approved" && (
           <button
-            onClick={() => navigator.clipboard.writeText(`https://easyhousehunt.com/l/${l.id}`).then(() => alert("Link copied:\nhttps://easyhousehunt.com/l/" + l.id))}
+            onClick={async () => {
+              const { data } = await (supabase as any).from("properties").select("share_code").eq("id", l.id).maybeSingle();
+              const url = listingUrl({ ...l, share_code: data?.share_code ?? null });
+              await navigator.clipboard.writeText(url);
+              alert("Link copied:\n" + url);
+            }}
             className="mt-3 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1.5">
             🔗 Copy share link
           </button>
