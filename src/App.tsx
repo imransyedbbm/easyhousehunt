@@ -83,7 +83,8 @@ function App() {
         .not("longitude", "is", null)
         .limit(100);
       // Let-out homes leave the map; falls back if the availability column isn't there yet.
-      let { data, error } = await query(FIELDS + ", availability").neq("availability", "let_out");
+      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out");
+      if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS));
 
       if (error) { console.error("Supabase error:", error.message); setProperties([]); return; }
@@ -108,6 +109,8 @@ function App() {
         occupancy: p.occupancy ?? null,
         is_sample: p.is_sample ?? false,
         availability: p.availability ?? "available",
+        availability_date: p.availability_date ?? null,
+        preferred_tenants: p.preferred_tenants ?? [],
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,
       }));

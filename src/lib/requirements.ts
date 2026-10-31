@@ -21,8 +21,22 @@ export interface Requirement {
   tenant_type: string | null;
   notes: string | null;
   status: "active" | "paused" | "closed";
+  whatsapp_opt_in: boolean;
   created_at: string;
   last_notified_at: string | null;
+}
+
+export const TENANT_TYPES = ["Family", "Working professional(s)", "Bachelor(s)", "Student(s)"];
+
+const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
+const parseDate = (s?: string | null) => (s ? new Date(s + "T00:00:00") : null);
+
+/** "Available now" / "Available from 15 Nov" */
+export function availabilityLabel(date?: string | null) {
+  const d = parseDate(date);
+  if (!d || d <= today()) return "Available now";
+  return "Available from " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
 export type RequirementInput = Omit<Requirement, "id" | "user_id" | "created_at" | "last_notified_at">;
@@ -32,7 +46,7 @@ export const OPEN_REQUIREMENT = "ehh:open-requirement";
 export const openRequirement = () => window.dispatchEvent(new Event(OPEN_REQUIREMENT));
 
 /** Same rules as the database's requirement_fits(), for showing matches instantly. */
-export function fits(r: Pick<Requirement, "areas" | "radius_km" | "property_type" | "bhk" | "budget_max" | "furnishing">, p: Property) {
+export function fits(r: Pick<Requirement, "areas" | "radius_km" | "property_type" | "bhk" | "budget_max" | "furnishing" | "move_in" | "tenant_type">, p: Property) {
   if (p.is_sample || p.listing_type === "sale" || p.availability === "let_out") return false;
   if (p.latitude == null || p.longitude == null) return false;
   const type = p.property_type || "Apartment";
@@ -40,6 +54,13 @@ export function fits(r: Pick<Requirement, "areas" | "radius_km" | "property_type
   if (r.bhk.length && type !== "PG" && !(p.bhk != null && (r.bhk.includes(p.bhk) || (p.bhk >= 4 && r.bhk.includes(4))))) return false;
   if (r.budget_max && p.rent && p.rent > r.budget_max * 1.1) return false;
   if (r.furnishing.length && p.furnishing && !r.furnishing.includes(p.furnishing)) return false;
+  const moveIn = parseDate(r.move_in);
+  if (moveIn) {
+    const free = parseDate(p.availability_date) ?? today();
+    if (free > addDays(moveIn, 15)) return false;
+    if (moveIn > addDays(free > today() ? free : today(), 45)) return false;
+  }
+  if (r.tenant_type && p.preferred_tenants?.length && !p.preferred_tenants.includes(r.tenant_type)) return false;
   return r.areas.some((a) => distanceMeters(a, { lat: p.latitude!, lng: p.longitude! }) <= r.radius_km * 1000);
 }
 
@@ -78,9 +99,16 @@ export function useMyRequirements() {
   return { items, loading, save, setStatus, reload: load };
 }
 
+/** Re-check matches for a listing (after approval, or when an owner lowers the rent). Fire-and-forget. */
+export function notifyMatches(propertyId: string) {
+  supabase.functions.invoke("notify-matches", { body: { property_id: propertyId } })
+    .then(({ error }) => { if (error) console.warn("notify-matches:", error); });
+}
+
 /** How many active tenants want a home like this (owner-side demand). */
 export async function demandCount(args: {
   lat: number; lng: number; propertyType?: string; bhk?: number | null; rent?: number | null; furnishing?: string | null;
+  availableFrom?: string | null; preferredTenants?: string[];
 }) {
   const { data, error } = await (supabase as any).rpc("demand_count", {
     _lat: args.lat,
@@ -89,6 +117,8 @@ export async function demandCount(args: {
     _bhk: args.bhk ?? null,
     _rent: args.rent ?? null,
     _furnishing: args.furnishing ?? null,
+    _available: args.availableFrom || null,
+    _preferred: args.preferredTenants ?? [],
   });
   return error ? null : (data as number);
 }
