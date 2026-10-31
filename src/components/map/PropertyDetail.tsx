@@ -20,6 +20,11 @@ export default function PropertyDetail({
   onConnectClick: () => void;
 }) {
   const { user } = useAuth();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   const [shareNote, setShareNote] = useState("");
   // A reserved listing stays open only to people already talking to the owner.
   const [hasThread, setHasThread] = useState(false);
@@ -52,14 +57,19 @@ export default function PropertyDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/60">
-      <div className="bg-gray-900 text-white w-full sm:w-[480px] rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-        >
-          ✕
-        </button>
+    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-gray-900 text-white w-full sm:w-[480px] rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}>
+        {/* Close: stays pinned while scrolling, high-contrast over photos */}
+        <div className="sticky top-0 z-20 flex justify-end h-0 pointer-events-none">
+          <button
+            onClick={onClose}
+            aria-label="Close listing"
+            className="pointer-events-auto -mt-3 -mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-white text-lg font-bold border border-white/40 shadow-lg hover:bg-orange-600 hover:border-orange-500 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
 
         {/* Photos */}
         <div className="mb-4">
