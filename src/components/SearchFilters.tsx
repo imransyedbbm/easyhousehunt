@@ -167,8 +167,9 @@ export default function SearchFilters({
       <div ref={boxRef} className="mb-2">
         <div className="relative">
           <input
-            className="w-full bg-gray-800 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            placeholder="Search by name or area..."
+            className="w-full bg-gray-800 border-2 border-gray-500 hover:border-gray-400 rounded-xl pl-10 pr-3 py-3 text-base text-white placeholder-gray-300 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 shadow-inner"
+            placeholder="Search area or apartment name…"
+            aria-label="Search by area or apartment name"
             value={filters.search}
             onFocus={() => setOpen(true)}
             onChange={(e) => {
@@ -197,7 +198,7 @@ export default function SearchFilters({
               }
             }}
           />
-          <span className="absolute left-2.5 top-2.5 text-gray-500 text-sm">🔍</span>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg">🔍</span>
         </div>
 
         {open && suggestions.length > 0 && (
