@@ -3,18 +3,17 @@ import { LOCALITIES } from "@/data/localities";
 import { useAuth } from "@/hooks/useAuth";
 import { selectProperty } from "@/lib/searchStore";
 import { formatPrice } from "@/lib/price";
-import { Area, Requirement, RequirementInput, fits, useMyRequirements } from "@/lib/requirements";
+import { Area, Requirement, RequirementInput, TENANT_TYPES, availabilityLabel, fits, useMyRequirements } from "@/lib/requirements";
 import type { Property } from "@/types/property";
 
 const TYPES = ["Any", "Apartment", "Independent House", "PG"] as const;
 const BHKS = [1, 2, 3, 4];
 const FURNISHING = ["Unfurnished", "Semi", "Fully Furnished"];
-const TENANT_TYPES = ["Family", "Working professional(s)", "Bachelor(s)", "Student(s)"];
 const RADII = [1, 2, 3, 5, 8];
 
 const blank = (name = ""): RequirementInput => ({
   name, phone: "", areas: [], radius_km: 3, property_type: "Any", bhk: [], budget_max: null,
-  furnishing: [], move_in: null, tenant_type: null, notes: "", status: "active",
+  furnishing: [], move_in: null, tenant_type: null, notes: "", status: "active", whatsapp_opt_in: false,
 });
 
 const chip = (on: boolean) =>
@@ -73,7 +72,7 @@ export default function RequirementModal({ onClose, properties }: { onClose: () 
             items={items}
             properties={properties}
             onNew={() => setEditing({ form: blank(items[0]?.name || "") })}
-            onEdit={(r) => setEditing({ id: r.id, form: { ...r, notes: r.notes ?? "" } })}
+            onEdit={({ id, user_id, created_at, last_notified_at, ...rest }) => setEditing({ id, form: { ...rest, notes: rest.notes ?? "" } })}
             onStatus={setStatus}
             onClose={onClose}
           />
@@ -137,7 +136,10 @@ function MatchList({ matches, onPick }: { matches: Property[]; onPick?: () => vo
           <button key={p.id} disabled={!onPick} onClick={() => { onPick?.(); selectProperty(p); }}
             className="w-full text-left bg-gray-900 enabled:hover:bg-gray-700 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
             <span className="text-xs truncate">{p.title}{p.availability === "reserved" ? " · Reserved" : ""}</span>
-            <span className="text-xs text-green-400 font-semibold shrink-0">{formatPrice(p)}</span>
+            <span className="text-right shrink-0">
+              <span className="block text-xs text-green-400 font-semibold">{formatPrice(p)}</span>
+              <span className="block text-[10px] text-gray-400">{availabilityLabel(p.availability_date)}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -173,7 +175,8 @@ function RequirementForm({ initial, properties, canCancel, onCancel, onSave }: {
     if (!f.areas.length) return setError("Add at least one area you'd like to live in.");
     if (f.phone && !/^[+\d][\d\s-]{7,15}$/.test(f.phone.trim())) return setError("Enter a valid phone number, or leave it blank.");
     setSaving(true);
-    const err = await onSave({ ...f, name: f.name?.trim() || null, phone: f.phone?.trim() || null, notes: f.notes?.trim() || null });
+    const phone = f.phone?.trim() || null;
+    const err = await onSave({ ...f, name: f.name?.trim() || null, phone, whatsapp_opt_in: !!phone && f.whatsapp_opt_in, notes: f.notes?.trim() || null });
     setSaving(false);
     if (err) setError(err);
   };
@@ -264,6 +267,11 @@ function RequirementForm({ initial, properties, canCancel, onCancel, onSave }: {
             <input className={inp + " mt-2"} inputMode="tel" maxLength={20} placeholder="98765 43210" value={f.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
           </div>
         </div>
+        <label className={`flex items-start gap-2 text-sm ${f.phone?.trim() ? "text-gray-200" : "text-gray-500"}`}>
+          <input type="checkbox" className="mt-1 accent-orange-500" disabled={!f.phone?.trim()}
+            checked={!!f.whatsapp_opt_in && !!f.phone?.trim()} onChange={(e) => set("whatsapp_opt_in", e.target.checked)} />
+          <span>Also alert me on <b>WhatsApp</b>{!f.phone?.trim() && <span className="block text-xs">Add your phone number to turn this on.</span>}</span>
+        </label>
         <div>
           <p className={label}>Anything else?</p>
           <textarea className={inp + " mt-2 h-16 resize-none"} maxLength={1000} placeholder="e.g. pet-friendly, near metro, 2 parking slots"

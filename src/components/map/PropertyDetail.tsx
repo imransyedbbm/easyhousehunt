@@ -1,3 +1,4 @@
+import { availabilityLabel } from "@/lib/requirements";
 import { useEffect, useState } from "react";
 import { Property } from "../../types/property";
 import { useAuth } from "@/hooks/useAuth";
@@ -116,6 +117,16 @@ export default function PropertyDetail({
           {property.deposit && (
             <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
               Deposit: ₹{property.deposit.toLocaleString()}
+            </span>
+          )}
+          {property.listing_type !== "sale" && (
+            <span className="bg-teal-900/60 text-teal-200 px-3 py-1 rounded-full text-sm">
+              📅 {availabilityLabel(property.availability_date)}
+            </span>
+          )}
+          {property.listing_type !== "sale" && !!property.preferred_tenants?.length && (
+            <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
+              👥 Prefers: {property.preferred_tenants.join(", ")}
             </span>
           )}
         </div>

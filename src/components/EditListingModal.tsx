@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MAX_PHOTOS, uploadListingPhotos } from "@/lib/photos";
+import { TENANT_TYPES, notifyMatches } from "@/lib/requirements";
 
 interface EditProps {
   listing: any;
@@ -29,6 +30,8 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
     furnishing: "", description: "", address: "", latitude: "", longitude: "", sale_price: "",
   });
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [availableFrom, setAvailableFrom] = useState("");
+  const [preferredTenants, setPreferredTenants] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +70,8 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
         sale_price: data.sale_price != null ? String(data.sale_price) : "",
       });
       setPhotoUrls(((data.media_urls as unknown[]) || []).filter(isHttpUrl));
+      setAvailableFrom((data as any).availability_date ?? "");
+      setPreferredTenants((data as any).preferred_tenants ?? []);
     })();
     return () => { cancelled = true; };
   }, [listing.id]);
@@ -142,6 +147,9 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
         longitude: toNum(form.longitude),
         media_urls: urls,
       };
+      // Only send the new fields if the database has them (keeps older databases working).
+      if ("availability_date" in orig) next.availability_date = availableFrom || null;
+      if ("preferred_tenants" in orig) next.preferred_tenants = orig.property_type === "PG" ? [] : preferredTenants;
 
       // only send what actually changed
       const changed: Record<string, any> = {};
@@ -163,6 +171,11 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
 
       if (err) throw err;
       if (!data || data.length === 0) throw new Error("You don't have permission to change this listing.");
+      // Rent lowered, or dates/tenant preferences changed: re-check who this live listing now suits.
+      const rentDropped = "rent" in changed && Number(changed.rent) < Number(orig.rent);
+      if (orig.status === "approved" && (rentDropped || "availability_date" in changed || "preferred_tenants" in changed)) {
+        notifyMatches(orig.id);
+      }
       onSaved();
     } catch (e: any) {
       setError(e?.message || "Could not save changes.");
@@ -242,6 +255,33 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
                   ))}
                 </div>
               </div>
+
+              {/* Availability + preferred tenants (rentals) */}
+              {orig?.listing_type !== "sale" && (
+                <div>
+                  <label className="text-xs text-gray-400">Available from</label>
+                  <div className="flex gap-2 mt-1 items-center">
+                    <button onClick={() => setAvailableFrom("")}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-medium border ${!availableFrom ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                      Now
+                    </button>
+                    <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className={inp} />
+                  </div>
+                </div>
+              )}
+              {orig?.listing_type !== "sale" && orig?.property_type !== "PG" && (
+                <div>
+                  <label className="text-xs text-gray-400">Preferred tenants (none = anyone)</label>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {TENANT_TYPES.map((t) => (
+                      <button key={t} onClick={() => setPreferredTenants((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]))}
+                        className={`py-1 px-2.5 rounded-full text-xs font-medium border ${preferredTenants.includes(t) ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               <div>

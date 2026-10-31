@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/ui/AuthModal";
-import { demandCount } from "@/lib/requirements";
+import { TENANT_TYPES, demandCount } from "@/lib/requirements";
 
 const PROJECTS = [
   "Embassy Lake Terraces", "RMZ Latitude", "Godrej Woodman Estate",
@@ -42,6 +42,8 @@ export default function ListingWizard({ onClose, onSuccess }: {
   const [uploading, setUploading] = useState(false);
   const [findSignal, setFindSignal] = useState(0);
   const [listingType, setListingType] = useState<"rent" | "sale">("rent");
+  const [availableFrom, setAvailableFrom] = useState("");          // "" = available now
+  const [preferredTenants, setPreferredTenants] = useState<string[]>([]); // [] = anyone
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -159,6 +161,10 @@ export default function ListingWizard({ onClose, onSuccess }: {
       gender_preference: form.property_type === "PG" ? form.gender_preference : null,
       meals_included: form.property_type === "PG" ? form.meals_included === "true" : null,
       bathroom_type: form.property_type === "PG" ? form.bathroom_type : null,
+      ...(listingType === "rent" ? {
+        availability_date: availableFrom || null,
+        preferred_tenants: form.property_type === "PG" ? [] : preferredTenants,
+      } : {}),
     });
 
     setSaving(false);
@@ -174,6 +180,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
       lat: Number(form.latitude), lng: Number(form.longitude),
       propertyType: form.property_type, bhk: form.property_type === "PG" ? null : parseInt(form.bhk) || null,
       rent: parseInt(form.rent) || null, furnishing: form.furnishing,
+      availableFrom: availableFrom || null, preferredTenants: form.property_type === "PG" ? [] : preferredTenants,
     }).then(setDemand);
   }, [step]);
 
@@ -378,6 +385,33 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   ))}
                 </div>
               </div>
+              {listingType === "rent" && (
+                <div>
+                  <label className="text-sm text-gray-400">Available from</label>
+                  <div className="flex gap-2 mt-2 items-center">
+                    <button onClick={() => setAvailableFrom("")}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium border ${!availableFrom ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                      Now
+                    </button>
+                    <input type="date" min={new Date().toISOString().slice(0, 10)} value={availableFrom}
+                      onChange={e => setAvailableFrom(e.target.value)}
+                      className={`flex-1 bg-gray-800 border rounded-lg px-3 py-2 text-sm text-white ${availableFrom ? "border-orange-500" : "border-gray-600"}`} />
+                  </div>
+                </div>
+              )}
+              {listingType === "rent" && form.property_type !== "PG" && (
+                <div>
+                  <label className="text-sm text-gray-400">Preferred tenants <span className="text-gray-500 text-xs">(leave empty for anyone)</span></label>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {TENANT_TYPES.map(t => (
+                      <button key={t} onClick={() => setPreferredTenants(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t])}
+                        className={`py-1.5 px-3 rounded-full text-xs font-medium border ${preferredTenants.includes(t) ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {form.property_type === "PG" && (
                 <div className="space-y-3">
                   <div>

@@ -2,7 +2,7 @@ import { Property } from "../../types/property";
 import { formatDistance } from "@/lib/geo";
 import SaveButton from "@/components/SaveButton";
 import { formatPrice } from "@/lib/price";
-import { openRequirement } from "@/lib/requirements";
+import { availabilityLabel, openRequirement } from "@/lib/requirements";
 
 type Props = {
   properties: Property[];
@@ -65,6 +65,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
             <p className="text-gray-300 text-xs">{p.bhk} BHK · {p.property_type || "Apartment"}</p>
           ) : null}
           <p className="text-gray-400 text-xs mt-1 truncate">{p.address}</p>
+          {p.listing_type !== "sale" && p.availability_date && availabilityLabel(p.availability_date) !== "Available now" && (
+            <p className="text-teal-300 text-xs mt-1">📅 {availabilityLabel(p.availability_date)}</p>
+          )}
           {p.distance_m != null && (
             <p className="text-blue-300 text-xs mt-1">📍 {formatDistance(p.distance_m)} away</p>
           )}

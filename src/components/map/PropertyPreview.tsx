@@ -1,3 +1,4 @@
+import { availabilityLabel } from "@/lib/requirements";
 import { useEffect } from "react";
 import { Property } from "../../types/property";
 import { addRecent } from "@/lib/recentlyViewed";
@@ -69,7 +70,8 @@ export default function PropertyPreview({
           {!property.is_sample && <SaveButton propertyId={property.id} size="sm" className="flex-shrink-0" />}
         </div>
         <p className="truncate text-xs text-gray-300">
-          {[property.property_type, sizeLabel, property.furnishing].filter(Boolean).join(" · ")}
+          {[property.property_type, sizeLabel, property.furnishing,
+            property.listing_type !== "sale" ? availabilityLabel(property.availability_date) : null].filter(Boolean).join(" · ")}
         </p>
         {property.address && <p className="truncate text-xs text-gray-400">📍 {property.address}</p>}
       </div>
