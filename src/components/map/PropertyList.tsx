@@ -2,6 +2,7 @@ import { Property } from "../../types/property";
 import { formatDistance } from "@/lib/geo";
 import SaveButton from "@/components/SaveButton";
 import { formatPrice } from "@/lib/price";
+import { openRequirement } from "@/lib/requirements";
 
 type Props = {
   properties: Property[];
@@ -14,7 +15,16 @@ export default function PropertyList({ properties, onSelect }: Props) {
   }
 
   if (properties.length === 0) {
-    return <div className="text-gray-400 p-4 text-sm">No properties found.</div>;
+    return (
+      <div className="p-4 text-sm text-gray-400 space-y-3">
+        <p>No homes match these filters yet.</p>
+        <button onClick={openRequirement}
+          className="w-full rounded-xl border border-dashed border-orange-500/60 bg-orange-500/10 px-4 py-3 text-left text-orange-200 hover:bg-orange-500/20">
+          <span className="font-semibold">📝 Post your requirement</span>
+          <span className="block text-xs text-gray-400 mt-0.5">Tell us what you need and we'll email you when a matching home is listed.</span>
+        </button>
+      </div>
+    );
   }
 
   const hasSamples = properties.some((p) => p.is_sample);

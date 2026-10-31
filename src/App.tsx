@@ -22,6 +22,8 @@ import { supabase } from "./integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import RentRight from "./pages/RentRight";
 import { OPEN_RENTRIGHT, useAgreedDeals } from "@/lib/deals";
+import { OPEN_REQUIREMENT, openRequirement } from "@/lib/requirements";
+import RequirementModal from "@/components/RequirementModal";
 import { Property } from "./types/property";
 
 function App() {
@@ -49,6 +51,7 @@ function App() {
   const [tenantDashOpen, setTenantDashOpen] = useState(false);
   const [adminDashOpen, setAdminDashOpen] = useState(false);
   const [rentRightOpen, setRentRightOpen] = useState(false);
+  const [requirementOpen, setRequirementOpen] = useState(false);
   const [rentRightDealId, setRentRightDealId] = useState<string | undefined>();
   const agreedDeals = useAgreedDeals();
   const rentRightUnlocked = agreedDeals.length > 0;
@@ -192,6 +195,20 @@ function App() {
     return () => setPropertySelectHandler(null);
   }, []);
 
+  // "Post your requirement" needs an account (alerts are emailed); resume after sign-in.
+  const [requirementAfterLogin, setRequirementAfterLogin] = useState(false);
+  useEffect(() => {
+    const open = () => {
+      if (user) setRequirementOpen(true);
+      else { setRequirementAfterLogin(true); setAuthIntent("tenant"); setAuthModalOpen(true); }
+    };
+    window.addEventListener(OPEN_REQUIREMENT, open);
+    return () => window.removeEventListener(OPEN_REQUIREMENT, open);
+  }, [user?.id]);
+  useEffect(() => {
+    if (user && requirementAfterLogin) { setRequirementAfterLogin(false); setAuthModalOpen(false); setRequirementOpen(true); }
+  }, [user?.id, requirementAfterLogin]);
+
   const handleListProperty = () => {
     if (user) { setWizardOpen(true); }
     else { setAuthIntent("owner"); setAuthModalOpen(true); }
@@ -258,6 +275,10 @@ function App() {
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
                         📋 My Dashboard
                       </button>
+                      <button onClick={() => { openRequirement(); setMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
+                        📝 My requirements
+                      </button>
                       <button onClick={() => { setRentRightDealId(undefined); setRentRightOpen(true); setMenuOpen(false); }}
                         title={rentRightUnlocked ? "Draft your rental agreement" : "Unlocks once you and the other party agree a deal"}
                         className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
@@ -285,10 +306,16 @@ function App() {
                 </button>
               )}
             </div>
-            <button onClick={handleListProperty}
-              className="bg-orange-500 hover:bg-orange-600 w-full py-3 rounded font-semibold">
-              + List Your Property
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleListProperty}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 py-3 rounded font-semibold text-sm">
+                + List Your Property
+              </button>
+              <button onClick={openRequirement}
+                className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 py-3 rounded font-semibold text-sm">
+                📝 Post Requirement
+              </button>
+            </div>
             <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 text-[11px] text-gray-500">
               <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Privacy</a>
               <span>·</span>
@@ -358,6 +385,7 @@ function App() {
       {ownerDashOpen && <OwnerDashboard onClose={() => { setOwnerDashOpen(false); fetchProperties(); }} />}
       {tenantDashOpen && <TenantDashboard onClose={() => setTenantDashOpen(false)} />}
       {adminDashOpen && <AdminDashboard onClose={() => { setAdminDashOpen(false); fetchProperties(); }} />}
+      {requirementOpen && <RequirementModal properties={properties} onClose={() => setRequirementOpen(false)} />}
       {rentRightOpen && <RentRight deals={agreedDeals} initialDealId={rentRightDealId} onClose={() => setRentRightOpen(false)} />}
     </>
   );
