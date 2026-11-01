@@ -170,9 +170,10 @@ function App() {
     const noMax = filters.maxRent >= 99999999;
     if (price < filters.minRent || (!noMax && price > filters.maxRent)) return false;
     if (filters.furnishing.length > 0 && !filters.furnishing.includes(p.furnishing ?? "")) return false;
-    if (filters.propertyType !== "All" && p.property_type !== filters.propertyType) return false;
-    // "All" means homes; commercial spaces only show when Commercial is picked.
-    if (filters.propertyType === "All" && p.property_type === "Commercial") return false;
+    // "All" shows homes and commercial together; "Homes" hides commercial spaces.
+    if (filters.propertyType === "Homes") {
+      if (p.property_type === "Commercial") return false;
+    } else if (filters.propertyType !== "All" && p.property_type !== filters.propertyType) return false;
     if (filters.commercialType?.length && !filters.commercialType.includes(p.commercial_type ?? "")) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();

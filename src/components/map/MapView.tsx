@@ -6,6 +6,10 @@ import { Property } from "../../types/property";
 import PropertyPreview from "./PropertyPreview";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatPrice, pinLabel } from "@/lib/price";
+
+// Pin colours: homes cyan, commercial violet (orange = selected, grey = sample)
+const PIN_HOME = "#22d3ee";
+const PIN_COMMERCIAL = "#8b5cf6";
 import { NEAR_RADIUS_M, distanceMeters, formatDistance } from "@/lib/geo";
 
 function buildHoverContent(p: Property): HTMLElement {
@@ -192,12 +196,14 @@ export default function MapView({
       el.style.fontWeight = "700";
       el.style.cursor = "pointer";
       const sample = !!p.is_sample;
-      el.style.background = isSelected ? "#f97316" : sample ? "#9ca3af" : "#22d3ee";
+      const commercial = p.property_type === "Commercial";
+      el.style.background = isSelected ? "#f97316" : sample ? "#9ca3af" : commercial ? PIN_COMMERCIAL : PIN_HOME;
       if (sample && !isSelected) {
         el.style.border = "1px dashed #374151";
         el.style.opacity = "0.85";
       }
-      el.style.color = isSelected ? "#fff" : "#000";
+      el.style.color = isSelected || (commercial && !sample) ? "#fff" : "#000";
+      if (commercial) el.title = sizeLabel(p) || "Commercial";
       el.style.boxShadow = isSelected ? "0 0 12px rgba(249,115,22,0.8)" : "none";
       el.style.zIndex = isSelected ? "10" : "1";
       el.innerText = pinLabel(p);
@@ -299,6 +305,14 @@ export default function MapView({
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainer} className="h-full w-full" />
+
+      {/* Pin legend (only when both kinds are on the map) */}
+      {properties.some((p) => p.property_type === "Commercial") && properties.some((p) => p.property_type !== "Commercial") && (
+        <div className="pointer-events-none absolute left-3 top-3 z-10 flex gap-3 rounded-full bg-gray-900/85 px-3 py-1.5 text-[11px] font-semibold text-gray-200 ring-1 ring-white/10">
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PIN_HOME }} />Homes</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PIN_COMMERCIAL }} />Commercial</span>
+        </div>
+      )}
 
       <div
         className={`absolute right-4 z-20 flex max-w-[75%] items-end gap-2 ${

@@ -143,19 +143,21 @@ export default function SearchFilters({
   ].filter(Boolean).length;
 
   const isCommercialView = filters.propertyType === "Commercial";
-  const setSegment = (commercial: boolean) => {
-    if (commercial === isCommercialView) return;
-    update({ propertyType: commercial ? "Commercial" : "All", commercialType: [], bhk: [], furnishing: [], occupancy: [] });
+  type Segment = "All" | "Homes" | "Commercial";
+  const segment: Segment = filters.propertyType === "All" ? "All" : isCommercialView ? "Commercial" : "Homes";
+  const setSegment = (s: Segment) => {
+    if (s === segment) return;
+    update({ propertyType: s, commercialType: [], bhk: [], furnishing: [], occupancy: [] });
   };
 
   return (
     <div className="px-4 pb-2">
-      {/* Homes / Commercial: always visible */}
+      {/* All / Homes / Commercial: always visible. Default "All" shows both on the map. */}
       <div className="mb-2 flex rounded-lg bg-gray-800 p-1 text-sm font-semibold">
-        {[false, true].map((c) => (
-          <button key={String(c)} onClick={() => setSegment(c)}
-            className={`flex-1 rounded-md py-1.5 ${isCommercialView === c ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
-            {c ? "🏢 Commercial" : "🏠 Homes"}
+        {(["All", "Homes", "Commercial"] as const).map((s) => (
+          <button key={s} onClick={() => setSegment(s)}
+            className={`flex-1 rounded-md py-1.5 ${segment === s ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
+            {s === "All" ? "All" : s === "Homes" ? "🏠 Homes" : "🏢 Commercial"}
           </button>
         ))}
       </div>
@@ -299,10 +301,10 @@ export default function SearchFilters({
         <div className="mt-3 space-y-4 bg-gray-900 rounded-xl p-3">
 
           {/* Property Type (homes only; commercial uses the switch above) */}
-          {!isCommercialView && <div>
+          {segment === "Homes" && <div>
             <p className="text-xs text-gray-400 mb-2">Property Type</p>
             <div className="flex gap-2">
-              {["All", "Apartment", "PG", "Independent House"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
+              {["Homes", "Apartment", "PG", "Independent House"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
                 <button
                   key={t}
                   onClick={() => update({ propertyType: t, commercialType: [], ...(t === "Commercial" || filters.propertyType === "Commercial" ? { bhk: [], furnishing: [] } : {}) })}
@@ -312,7 +314,7 @@ export default function SearchFilters({
                       : "bg-gray-800 border-gray-600 text-gray-300"
                   }`}
                 >
-                  {t === "Independent House" ? "House" : t}
+                  {t === "Independent House" ? "House" : t === "Homes" ? "All homes" : t}
                 </button>
               ))}
             </div>
