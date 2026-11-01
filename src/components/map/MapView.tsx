@@ -308,7 +308,7 @@ export default function MapView({
 
       {/* Pin legend (only when both kinds are on the map) */}
       {properties.some((p) => p.property_type === "Commercial") && properties.some((p) => p.property_type !== "Commercial") && (
-        <div className="pointer-events-none absolute left-3 top-3 z-10 flex gap-3 rounded-full bg-gray-900/85 px-3 py-1.5 text-[11px] font-semibold text-gray-200 ring-1 ring-white/10">
+        <div className="pointer-events-none absolute left-3 top-[4.5rem] md:top-3 z-10 flex gap-3 rounded-full bg-gray-900/85 px-3 py-1.5 text-[11px] font-semibold text-gray-200 ring-1 ring-white/10">
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PIN_HOME }} />Homes</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PIN_COMMERCIAL }} />Commercial</span>
         </div>
