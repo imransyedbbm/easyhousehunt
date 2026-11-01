@@ -142,8 +142,23 @@ export default function SearchFilters({
     filters.occupancy.length > 0,
   ].filter(Boolean).length;
 
+  const isCommercialView = filters.propertyType === "Commercial";
+  const setSegment = (commercial: boolean) => {
+    if (commercial === isCommercialView) return;
+    update({ propertyType: commercial ? "Commercial" : "All", commercialType: [], bhk: [], furnishing: [], occupancy: [] });
+  };
+
   return (
     <div className="px-4 pb-2">
+      {/* Homes / Commercial: always visible */}
+      <div className="mb-2 flex rounded-lg bg-gray-800 p-1 text-sm font-semibold">
+        {[false, true].map((c) => (
+          <button key={String(c)} onClick={() => setSegment(c)}
+            className={`flex-1 rounded-md py-1.5 ${isCommercialView === c ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
+            {c ? "🏢 Commercial" : "🏠 Homes"}
+          </button>
+        ))}
+      </div>
       {/* Rent / Buy */}
       {SALE_ENABLED && (
         <div className="mb-2">
@@ -283,11 +298,11 @@ export default function SearchFilters({
       {expanded && (
         <div className="mt-3 space-y-4 bg-gray-900 rounded-xl p-3">
 
-          {/* Property Type */}
-          <div>
+          {/* Property Type (homes only; commercial uses the switch above) */}
+          {!isCommercialView && <div>
             <p className="text-xs text-gray-400 mb-2">Property Type</p>
             <div className="flex gap-2">
-              {["All", "Apartment", "PG", "Independent House", "Commercial"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
+              {["All", "Apartment", "PG", "Independent House"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
                 <button
                   key={t}
                   onClick={() => update({ propertyType: t, commercialType: [], ...(t === "Commercial" || filters.propertyType === "Commercial" ? { bhk: [], furnishing: [] } : {}) })}
@@ -297,11 +312,11 @@ export default function SearchFilters({
                       : "bg-gray-800 border-gray-600 text-gray-300"
                   }`}
                 >
-                  {t === "Independent House" ? "House" : t === "All" ? "All homes" : t}
+                  {t === "Independent House" ? "House" : t}
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Commercial: kind of space */}
           {filters.propertyType === "Commercial" && (
