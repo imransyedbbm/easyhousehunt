@@ -84,7 +84,8 @@ function App() {
         .not("longitude", "is", null)
         .limit(100);
       // Let-out homes leave the map; falls back if the availability column isn't there yet.
-      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code").neq("availability", "let_out");
+      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type").neq("availability", "let_out");
+      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS));
@@ -138,6 +139,7 @@ function App() {
         landlord_id: p.landlord_id ?? null,
         property_type: p.property_type ?? "Apartment",
         occupancy: p.occupancy ?? null,
+        commercial_type: p.commercial_type ?? null,
         is_sample: p.is_sample ?? false,
         share_code: p.share_code ?? null,
         availability: p.availability ?? "available",
@@ -169,6 +171,9 @@ function App() {
     if (price < filters.minRent || (!noMax && price > filters.maxRent)) return false;
     if (filters.furnishing.length > 0 && !filters.furnishing.includes(p.furnishing ?? "")) return false;
     if (filters.propertyType !== "All" && p.property_type !== filters.propertyType) return false;
+    // "All" means homes; commercial spaces only show when Commercial is picked.
+    if (filters.propertyType === "All" && p.property_type === "Commercial") return false;
+    if (filters.commercialType?.length && !filters.commercialType.includes(p.commercial_type ?? "")) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (!p.title?.toLowerCase().includes(q) && !p.address?.toLowerCase().includes(q)) return false;

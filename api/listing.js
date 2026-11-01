@@ -42,7 +42,8 @@ export default async function handler(req, res) {
   let image = `${SITE}/og-image.png`;
 
   if (p) {
-    const size = p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK` : p.property_type || "Home";
+    const size = p.property_type === "Commercial" ? (p.commercial_type || "Commercial space")
+      : p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK` : p.property_type || "Home";
     const price = p.listing_type === "sale" && p.sale_price ? inr(p.sale_price) : p.rent ? `${inr(p.rent)}/month` : "";
     title = [`${size} · ${p.title || "Home for rent"}`, price].filter(Boolean).join(" · ");
     const bits = [
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
   }
 
   // Always point people at the short link and open the app by code, never by database ID.
-  const slug = p ? [p.property_type === "PG" ? "pg" : p.bhk ? `${p.bhk}bhk` : "", p.title || "home"].join(" ")
+  const slug = p ? [p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "", p.title || "home"].join(" ")
     .toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "") : "";
   const url = p?.share_code ? `${SITE}/l/${slug}-${p.share_code}` : `${SITE}/`;
   const appUrl = p?.share_code ? `${SITE}/?p=${p.share_code}` : legacyId && p ? `${SITE}/?p=${legacyId}` : `${SITE}/`;

@@ -125,7 +125,11 @@ export default function PropertyDetail({
               {property.property_type}
             </span>
           )}
-          {property.property_type === "PG" && property.occupancy ? (
+          {property.property_type === "Commercial" ? (
+            <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
+              🏢 {property.commercial_type || "Commercial"}
+            </span>
+          ) : property.property_type === "PG" && property.occupancy ? (
             <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
               {property.occupancy} Occupancy
             </span>

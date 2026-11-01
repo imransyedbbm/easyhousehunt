@@ -42,7 +42,7 @@ function prefillFromDeal(deal: Deal | undefined): FormData {
   return {
     ...defaultForm,
     address: [p.title, p.address].filter(Boolean).join(", "),
-    propType: p.bhk ? `${p.bhk} BHK ${typeName}` : typeName,
+    propType: p.property_type === "Commercial" ? "Commercial space" : p.bhk ? `${p.bhk} BHK ${typeName}` : typeName,
     furnishing: furnishing.startsWith("fully") ? "Fully Furnished"
       : furnishing.startsWith("semi") ? "Semi Furnished"
       : furnishing.startsWith("un") ? "Unfurnished" : defaultForm.furnishing,
@@ -69,7 +69,7 @@ export default function RentRight({ onClose, deals, initialDealId }: { onClose: 
   async function generateAgreement() {
     setLoading(true);
     setAgreement("");
-    const prompt = `You are an expert in Karnataka tenancy law. Draft a complete, legally sound rental agreement for the following details. Use formal legal language with numbered sections covering: parties, property description, term, rent, deposit, maintenance, termination, notice period, and dispute resolution (Bangalore jurisdiction).
+    const prompt = `You are an expert in Karnataka tenancy law. Draft a complete, legally sound rental agreement for the following details (if the property is a commercial space, draft a commercial lease / leave-and-licence agreement suited to business use, including permitted use, fit-out, signage and GST on rent). Use formal legal language with numbered sections covering: parties, property description, term, rent, deposit, maintenance, termination, notice period, and dispute resolution (Bangalore jurisdiction).
 
 Property: ${form.address} (${form.propType}, ${form.furnishing})
 Landlord: ${form.llName}, ID ending ${form.llId}, address: ${form.llAddress}

@@ -1,3 +1,4 @@
+import { furnishingOptions } from "@/lib/commercial";
 import { useMemo, useState } from "react";
 import { LOCALITIES } from "@/data/localities";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,9 +7,8 @@ import { formatPrice } from "@/lib/price";
 import { Area, Requirement, RequirementInput, TENANT_TYPES, availabilityLabel, fits, useMyRequirements } from "@/lib/requirements";
 import type { Property } from "@/types/property";
 
-const TYPES = ["Any", "Apartment", "Independent House", "PG"] as const;
+const TYPES = ["Any", "Apartment", "Independent House", "PG", "Commercial"] as const;
 const BHKS = [1, 2, 3, 4];
-const FURNISHING = ["Unfurnished", "Semi", "Fully Furnished"];
 const RADII = [1, 2, 3, 5, 8];
 
 const blank = (name = ""): RequirementInput => ({
@@ -217,9 +217,11 @@ function RequirementForm({ initial, properties, canCancel, onCancel, onSave }: {
         <div>
           <p className={label}>What kind of home?</p>
           <div className="flex gap-2 mt-2 flex-wrap">
-            {TYPES.map((t) => <button key={t} onClick={() => set("property_type", t)} className={chip(f.property_type === t)}>{t === "Independent House" ? "House" : t}</button>)}
+            {TYPES.map((t) => <button key={t}
+              onClick={() => setF((x) => ({ ...x, property_type: t, ...((t === "Commercial") !== (x.property_type === "Commercial") ? { furnishing: [], bhk: [], tenant_type: null } : {}) }))}
+              className={chip(f.property_type === t)}>{t === "Independent House" ? "House" : t === "Any" ? "Any home" : t === "Commercial" ? "🏢 Commercial" : t}</button>)}
           </div>
-          {f.property_type !== "PG" && (
+          {f.property_type !== "PG" && f.property_type !== "Commercial" && (
             <div className="flex gap-2 mt-2 flex-wrap">
               {BHKS.map((b) => <button key={b} onClick={() => set("bhk", toggle(f.bhk, b))} className={chip(f.bhk.includes(b))}>{b === 4 ? "4+" : b} BHK</button>)}
             </div>
@@ -246,15 +248,15 @@ function RequirementForm({ initial, properties, canCancel, onCancel, onSave }: {
         <div>
           <p className={label}>Furnishing <span className="normal-case font-normal text-gray-500">(none selected = any)</span></p>
           <div className="flex gap-2 mt-2 flex-wrap">
-            {FURNISHING.map((x) => <button key={x} onClick={() => set("furnishing", toggle(f.furnishing, x))} className={chip(f.furnishing.includes(x))}>{x === "Semi" ? "Semi-furnished" : x}</button>)}
+            {furnishingOptions(f.property_type).map((x) => <button key={x} onClick={() => set("furnishing", toggle(f.furnishing, x))} className={chip(f.furnishing.includes(x))}>{x === "Semi" ? "Semi-furnished" : x}</button>)}
           </div>
         </div>
-        <div>
+        {f.property_type !== "Commercial" && <div>
           <p className={label}>Who will live there?</p>
           <div className="flex gap-2 mt-2 flex-wrap">
             {TENANT_TYPES.map((x) => <button key={x} onClick={() => set("tenant_type", f.tenant_type === x ? null : x)} className={chip(f.tenant_type === x)}>{x}</button>)}
           </div>
-        </div>
+        </div>}
 
         {/* Contact */}
         <div className="grid grid-cols-2 gap-3">

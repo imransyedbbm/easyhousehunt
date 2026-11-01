@@ -1,3 +1,4 @@
+import { sizeLabel } from "@/lib/commercial";
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -26,7 +27,7 @@ function buildHoverContent(p: Property): HTMLElement {
   meta.style.fontSize = "12px";
   meta.style.color = "#d1d5db";
   const size =
-    p.property_type === "PG" && p.occupancy ? p.occupancy + " Occupancy" : p.bhk ? p.bhk + " BHK" : "";
+    sizeLabel(p) ?? "";
   meta.textContent = [p.property_type, size, p.furnishing].filter(Boolean).join(" · ");
 
   if (p.is_sample) {

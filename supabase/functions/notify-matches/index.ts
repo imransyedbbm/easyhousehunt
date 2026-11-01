@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const { data: p } = await admin
       .from("properties")
-      .select("id, title, address, bhk, rent, property_type, furnishing, media_urls, landlord_id, availability_date")
+      .select("*")
       .eq("id", property_id)
       .maybeSingle();
     if (!p) return json({ error: "Listing not found" }, 404);
@@ -70,7 +70,8 @@ serve(async (req) => {
     if (error) return json({ error: error.message }, 500);
 
     const photo = (p.media_urls || []).find((u: string) => /^https?:\/\//.test(u));
-    const size = p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK ${p.property_type || ""}`.trim() : p.property_type || "Home";
+    const size = p.property_type === "Commercial" ? (p.commercial_type || "Commercial space")
+      : p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK ${p.property_type || ""}`.trim() : p.property_type || "Home";
     let sent = 0, whatsapp = 0;
 
     for (const m of matches ?? []) {

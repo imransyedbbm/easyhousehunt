@@ -1,3 +1,4 @@
+import { COMMERCIAL_TYPES, furnishingOptions, isCommercial } from "@/lib/commercial";
 import { uploadListingPhotos } from "@/lib/photos";
 import LocationPicker from "@/components/map/LocationPicker";
 import { formatSalePrice } from "@/lib/price";
@@ -63,7 +64,9 @@ export default function ListingWizard({ onClose, onSuccess }: {
     address: "", rent: "", deposit: "", bhk: "2",
     area_sqft: "", furnishing: "Semi", description: "",
     latitude: "", longitude: "", property_type: "Apartment", occupancy: "Single",
+    commercial_type: "",
   });
+  const commercial = isCommercial(form.property_type);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -87,6 +90,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
   const chooseType = (t: string) => {
     if (t === form.property_type) return;
     set("property_type", t);
+    if (isCommercial(t) !== isCommercial(form.property_type)) set("furnishing", isCommercial(t) ? "Bare shell" : "Semi");
     setSelectedProject("");
     setCustomProject("");
   };
@@ -161,7 +165,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
       rent: listingType === "sale" ? 0 : parseInt(form.rent) || 0,
       sale_price: listingType === "sale" ? Math.round(Number(form.rent)) || null : null,
       deposit: listingType === "sale" ? null : parseInt(form.deposit) || null,
-      bhk: parseInt(form.bhk),
+      bhk: commercial ? null : parseInt(form.bhk),
       area_sqft: parseInt(form.area_sqft) || null,
       furnishing: form.furnishing,
       description: maskPhones(form.description),
@@ -171,13 +175,14 @@ export default function ListingWizard({ onClose, onSuccess }: {
       media_urls: uploadedUrls,
       landlord_id: user.id,
       property_type: form.property_type,
+      ...(commercial ? { commercial_type: form.commercial_type } : {}),
       occupancy: form.property_type === "PG" ? form.occupancy : null,
       gender_preference: form.property_type === "PG" ? form.gender_preference : null,
       meals_included: form.property_type === "PG" ? form.meals_included === "true" : null,
       bathroom_type: form.property_type === "PG" ? form.bathroom_type : null,
       ...(listingType === "rent" ? {
         availability_date: availableFrom || null,
-        preferred_tenants: form.property_type === "PG" ? [] : preferredTenants,
+        preferred_tenants: form.property_type === "PG" || commercial ? [] : preferredTenants,
       } : {}),
     }).select("id").single();
 
@@ -199,7 +204,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
     if (step !== 5 || listingType === "sale" || !form.latitude || !form.longitude) return;
     demandCount({
       lat: Number(form.latitude), lng: Number(form.longitude),
-      propertyType: form.property_type, bhk: form.property_type === "PG" ? null : parseInt(form.bhk) || null,
+      propertyType: form.property_type, bhk: form.property_type === "PG" || commercial ? null : parseInt(form.bhk) || null,
       rent: parseInt(form.rent) || null, furnishing: form.furnishing,
       availableFrom: availableFrom || null, preferredTenants: form.property_type === "PG" ? [] : preferredTenants,
     }).then(setDemand);
@@ -224,6 +229,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
     } else if (!customProject.trim()) {
       missing.push(form.property_type === "PG" ? "enter the PG name" : "enter a listing title");
     }
+    if (commercial && !form.commercial_type) missing.push("choose the type of space");
     if (!form.address.trim()) missing.push("enter the address");
     if (!form.latitude || !form.longitude) missing.push("drop the pin on the map");
     return missing;
@@ -231,7 +237,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
 
   const canNext = () => {
     if (step === 1) return step1Missing().length === 0;
-    if (step === 2) return listingType === "sale" ? Number(form.rent) > 0 : form.rent;
+    if (step === 2) return (listingType === "sale" ? Number(form.rent) > 0 : !!form.rent) && (!commercial || Number(form.area_sqft) > 0);
     return true;
   };
 
@@ -276,11 +282,11 @@ export default function ListingWizard({ onClose, onSuccess }: {
               )}
               <div>
                 <label className="text-sm text-gray-400">Property Type *</label>
-                <div className="flex gap-2 mt-1">
-                  {["Apartment", "Independent House", "PG"].filter(t => !(listingType === "sale" && t === "PG")).map(t => (
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {["Apartment", "Independent House", "PG", "Commercial"].filter(t => !(listingType === "sale" && t === "PG")).map(t => (
                     <button key={t} onClick={() => chooseType(t)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium border ${form.property_type === t ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
-                      {t}
+                      className={`py-2 rounded-lg text-sm font-medium border ${form.property_type === t ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                      {t === "Commercial" ? "🏢 Commercial" : t}
                     </button>
                   ))}
                 </div>
@@ -317,6 +323,26 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   <label className="text-sm text-gray-400">PG Name *</label>
                   <input className={inp + " mt-1"} placeholder="e.g. Sri Sai PG, Rajajinagar" value={customProject} onChange={e => setCustomProject(e.target.value)} />
                 </div>
+              )}
+
+              {commercial && (
+                <>
+                  <div>
+                    <label className="text-sm text-gray-400">Type of space *</label>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      {COMMERCIAL_TYPES.map(c => (
+                        <button key={c} onClick={() => set("commercial_type", c)}
+                          className={`py-1.5 px-3 rounded-full text-xs font-medium border ${form.commercial_type === c ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400">Listing Title *</label>
+                    <input className={inp + " mt-1"} placeholder="e.g. 2,000 sq ft office, Koramangala 80 Ft Road" value={customProject} onChange={e => setCustomProject(e.target.value)} />
+                  </div>
+                </>
               )}
 
               {form.property_type === "Independent House" && (
@@ -369,7 +395,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 {listingType === "rent" && <input type="number" className={inp + " mt-1"} placeholder="e.g. 100000" value={form.deposit} onChange={e => set("deposit", e.target.value)} />}
               </div>
               <div>
-                {form.property_type === "PG" ? (
+                {commercial ? null : form.property_type === "PG" ? (
                   <>
                     <label className="text-sm text-gray-400">Occupancy *</label>
                     <select className={inp + " mt-1"} value={form.occupancy} onChange={e => set("occupancy", e.target.value)}>
@@ -386,7 +412,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 )}
               </div>
               <div>
-                <label className="text-sm text-gray-400">Area (sqft)</label>
+                <label className="text-sm text-gray-400">Area (sqft){commercial ? " *" : ""}</label>
                 <input type="number" className={inp + " mt-1"} placeholder="e.g. 1200" value={form.area_sqft} onChange={e => set("area_sqft", e.target.value)} />
               </div>
             </div>
@@ -398,7 +424,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
               <div>
                 <label className="text-sm text-gray-400">Furnishing</label>
                 <div className="flex gap-2 mt-2">
-                  {["Unfurnished","Semi","Fully Furnished"].map(f => (
+                  {furnishingOptions(form.property_type).map(f => (
                     <button key={f} onClick={() => set("furnishing", f)}
                       className={`flex-1 py-2 rounded-lg text-sm font-medium border ${form.furnishing === f ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
                       {f === "Fully Furnished" ? "Full" : f}
@@ -420,7 +446,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   </div>
                 </div>
               )}
-              {listingType === "rent" && form.property_type !== "PG" && (
+              {listingType === "rent" && form.property_type !== "PG" && !commercial && (
                 <div>
                   <label className="text-sm text-gray-400">Preferred tenants <span className="text-gray-500 text-xs">(leave empty for anyone)</span></label>
                   <div className="flex gap-2 mt-2 flex-wrap">
@@ -602,6 +628,8 @@ export default function ListingWizard({ onClose, onSuccess }: {
                     <p><span className="text-gray-400">Meals:</span> <span className="text-white">{form.meals_included === "true" ? "Included ✓" : "Not included"}</span></p>
                     <p><span className="text-gray-400">Bathroom:</span> <span className="text-white">{form.bathroom_type}</span></p>
                   </>
+                ) : commercial ? (
+                  <p><span className="text-gray-400">Space:</span> <span className="text-white">{form.commercial_type} · {form.furnishing}</span></p>
                 ) : (
                   <p><span className="text-gray-400">BHK:</span> <span className="text-white">{form.bhk} BHK · {form.furnishing}</span></p>
                 )}

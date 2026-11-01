@@ -1,3 +1,4 @@
+import { COMMERCIAL_TYPES, furnishingOptions, isCommercial } from "@/lib/commercial";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +34,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [availableFrom, setAvailableFrom] = useState("");
   const [preferredTenants, setPreferredTenants] = useState<string[]>([]);
+  const [commercialType, setCommercialType] = useState("");
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -73,6 +75,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
       setPhotoUrls(((data.media_urls as unknown[]) || []).filter(isHttpUrl));
       setAvailableFrom((data as any).availability_date ?? "");
       setPreferredTenants((data as any).preferred_tenants ?? []);
+      setCommercialType((data as any).commercial_type ?? "");
     })();
     return () => { cancelled = true; };
   }, [listing.id]);
@@ -150,7 +153,8 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
       };
       // Only send the new fields if the database has them (keeps older databases working).
       if ("availability_date" in orig) next.availability_date = availableFrom || null;
-      if ("preferred_tenants" in orig) next.preferred_tenants = orig.property_type === "PG" ? [] : preferredTenants;
+      if ("preferred_tenants" in orig) next.preferred_tenants = orig.property_type === "PG" || isCommercial(orig.property_type) ? [] : preferredTenants;
+      if (isCommercial(orig.property_type) && "commercial_type" in orig) next.commercial_type = commercialType || null;
 
       // only send what actually changed
       const changed: Record<string, any> = {};
@@ -229,8 +233,16 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
                 </div>
               )}
 
-              {/* BHK + Area */}
+              {/* BHK (or type of space) + Area */}
               <div className="grid grid-cols-2 gap-3">
+                {isCommercial(orig?.property_type) ? (
+                  <div>
+                    <label className="text-xs text-gray-400">Type of space</label>
+                    <select className={inp + " mt-1"} value={commercialType} onChange={(e) => setCommercialType(e.target.value)}>
+                      {COMMERCIAL_TYPES.map((c) => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                ) : (
                 <div>
                   <label className="text-xs text-gray-400">BHK</label>
                   <select className={inp + " mt-1"} value={form.bhk} onChange={(e) => set("bhk", e.target.value)}>
@@ -238,6 +250,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
                     {["1", "2", "3", "4", "5"].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
+                )}
                 <div>
                   <label className="text-xs text-gray-400">Area (sqft)</label>
                   <input type="number" className={inp + " mt-1"} value={form.area_sqft} onChange={(e) => set("area_sqft", e.target.value)} />
@@ -248,7 +261,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
               <div>
                 <label className="text-xs text-gray-400">Furnishing</label>
                 <div className="flex gap-2 mt-1">
-                  {["Unfurnished", "Semi", "Fully Furnished"].map((f) => (
+                  {furnishingOptions(orig?.property_type).map((f) => (
                     <button key={f} onClick={() => set("furnishing", f)}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-medium border ${form.furnishing === f ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
                       {f === "Fully Furnished" ? "Full" : f}
@@ -270,7 +283,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
                   </div>
                 </div>
               )}
-              {orig?.listing_type !== "sale" && orig?.property_type !== "PG" && (
+              {orig?.listing_type !== "sale" && orig?.property_type !== "PG" && !isCommercial(orig?.property_type) && (
                 <div>
                   <label className="text-xs text-gray-400">Preferred tenants (none = anyone)</label>
                   <div className="flex gap-2 mt-1 flex-wrap">

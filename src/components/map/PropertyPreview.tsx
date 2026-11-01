@@ -1,3 +1,4 @@
+import { sizeLabel as sizeOf } from "@/lib/commercial";
 import { availabilityLabel } from "@/lib/requirements";
 import { useEffect } from "react";
 import { Property } from "../../types/property";
@@ -22,12 +23,7 @@ export default function PropertyPreview({
 
   useEffect(() => { addRecent(property.id); }, [property.id]);
 
-  const sizeLabel =
-    property.property_type === "PG" && property.occupancy
-      ? `${property.occupancy} Occupancy`
-      : property.bhk
-      ? `${property.bhk} BHK`
-      : null;
+  const sizeLabel = sizeOf(property);
 
   return (
     <div
