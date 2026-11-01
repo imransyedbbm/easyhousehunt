@@ -1,3 +1,4 @@
+import { sizeLabel } from "@/lib/commercial";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Property } from "@/types/property";
@@ -57,9 +58,7 @@ export default function RecentlyViewed() {
                 {items.map((p) => {
                   const photo = httpPhotos(p.media_urls)[0];
                   const size =
-                    p.property_type === "PG"
-                      ? p.occupancy ? `${p.occupancy} Occupancy` : "PG"
-                      : p.bhk ? `${p.bhk} BHK` : null;
+                    sizeLabel(p);
                   return (
                     <button
                       key={p.id}

@@ -1,3 +1,4 @@
+import { sizeLabel } from "@/lib/commercial";
 import type { Property } from "@/types/property";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -5,7 +6,7 @@ export const isUuid = (s: string) => UUID.test(s);
 
 /** "2bhk-karle-vario-homes" — readable part of the link (never used for lookup). */
 export function listingSlug(p: Pick<Property, "title" | "bhk" | "property_type">) {
-  const size = p.property_type === "PG" ? "pg" : p.bhk ? `${p.bhk}bhk` : "";
+  const size = p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
   return [size, p.title || "home"].join(" ")
     .toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "");
 }
@@ -23,7 +24,7 @@ export function linkKey(segment: string): { code?: string; id?: string } | null 
 }
 
 export function shareText(p: Property) {
-  const size = p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK` : p.property_type || "Home";
+  const size = sizeLabel(p) || p.property_type || "Home";
   const price = p.listing_type === "sale" && p.sale_price
     ? `₹${p.sale_price.toLocaleString("en-IN")}`
     : p.rent ? `₹${p.rent.toLocaleString("en-IN")}/month` : "";

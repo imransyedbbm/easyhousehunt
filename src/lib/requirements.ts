@@ -13,7 +13,7 @@ export interface Requirement {
   phone: string | null;
   areas: Area[];
   radius_km: number;
-  property_type: "Any" | "Apartment" | "Independent House" | "PG";
+  property_type: "Any" | "Apartment" | "Independent House" | "PG" | "Commercial";
   bhk: number[];
   budget_max: number | null;
   furnishing: string[];
@@ -51,7 +51,8 @@ export function fits(r: Pick<Requirement, "areas" | "radius_km" | "property_type
   if (p.latitude == null || p.longitude == null) return false;
   const type = p.property_type || "Apartment";
   if (r.property_type !== "Any" && r.property_type !== type) return false;
-  if (r.bhk.length && type !== "PG" && !(p.bhk != null && (r.bhk.includes(p.bhk) || (p.bhk >= 4 && r.bhk.includes(4))))) return false;
+  if (r.property_type === "Any" && type === "Commercial") return false; // "Any" = any home
+  if (r.bhk.length && type !== "PG" && type !== "Commercial" && !(p.bhk != null && (r.bhk.includes(p.bhk) || (p.bhk >= 4 && r.bhk.includes(4))))) return false;
   if (r.budget_max && p.rent && p.rent > r.budget_max * 1.1) return false;
   if (r.furnishing.length && p.furnishing && !r.furnishing.includes(p.furnishing)) return false;
   const moveIn = parseDate(r.move_in);

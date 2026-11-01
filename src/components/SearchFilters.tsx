@@ -1,3 +1,4 @@
+import { COMMERCIAL_TYPES, furnishingOptions } from "@/lib/commercial";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildIndex, getSuggestions, type Suggestion } from "@/lib/searchIndex";
 import { useSearchableProperties, useSearchNote } from "@/lib/searchStore";
@@ -11,6 +12,7 @@ export interface Filters {
   furnishing: string[];
   search: string;
   propertyType: string;
+  commercialType?: string[];
   occupancy: string[];
   area?: { name: string; lat: number; lng: number } | null;
   mode?: "rent" | "sale";
@@ -136,6 +138,7 @@ export default function SearchFilters({
     filters.furnishing.length > 0,
     filters.minRent > 0 || filters.maxRent < NO_MAX_RENT,
     filters.propertyType !== "All",
+    (filters.commercialType?.length ?? 0) > 0,
     filters.occupancy.length > 0,
   ].filter(Boolean).length;
 
@@ -284,24 +287,43 @@ export default function SearchFilters({
           <div>
             <p className="text-xs text-gray-400 mb-2">Property Type</p>
             <div className="flex gap-2">
-              {["All", "Apartment", "PG", "Independent House"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
+              {["All", "Apartment", "PG", "Independent House", "Commercial"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
                 <button
                   key={t}
-                  onClick={() => update({ propertyType: t })}
+                  onClick={() => update({ propertyType: t, commercialType: [], ...(t === "Commercial" || filters.propertyType === "Commercial" ? { bhk: [], furnishing: [] } : {}) })}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border ${
                     filters.propertyType === t
                       ? "bg-orange-500 border-orange-500 text-white"
                       : "bg-gray-800 border-gray-600 text-gray-300"
                   }`}
                 >
-                  {t === "Independent House" ? "House" : t}
+                  {t === "Independent House" ? "House" : t === "All" ? "All homes" : t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* BHK - hide for PG */}
-          {filters.propertyType !== "PG" && (
+          {/* Commercial: kind of space */}
+          {filters.propertyType === "Commercial" && (
+            <div>
+              <p className="text-xs text-gray-400 mb-2">Space type</p>
+              <div className="flex gap-2 flex-wrap">
+                {COMMERCIAL_TYPES.map((c) => {
+                  const on = (filters.commercialType ?? []).includes(c);
+                  return (
+                    <button key={c}
+                      onClick={() => update({ commercialType: on ? (filters.commercialType ?? []).filter((x) => x !== c) : [...(filters.commercialType ?? []), c] })}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border ${on ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* BHK - hide for PG and commercial */}
+          {filters.propertyType !== "PG" && filters.propertyType !== "Commercial" && (
           <div>
             <p className="text-xs text-gray-400 mb-2">BHK</p>
             <div className="flex gap-2">
@@ -396,7 +418,7 @@ export default function SearchFilters({
           <div>
             <p className="text-xs text-gray-400 mb-2">Furnishing</p>
             <div className="flex gap-2">
-              {["Unfurnished", "Semi", "Fully Furnished"].map((f) => (
+              {furnishingOptions(filters.propertyType).map((f) => (
                 <button
                   key={f}
                   onClick={() => toggleFurnishing(f)}
