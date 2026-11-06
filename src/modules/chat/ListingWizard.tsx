@@ -70,6 +70,8 @@ export default function ListingWizard({ onClose, onSuccess }: {
     area_sqft: "", furnishing: "Semi", description: "",
     latitude: "", longitude: "", property_type: "Apartment", occupancy: "Single",
     commercial_type: "",
+    // PG-only details (sent only when property_type is PG)
+    gender_preference: "Any", bathroom_type: "Shared", meals_included: "false",
   });
   const commercial = isCommercial(form.property_type);
 
