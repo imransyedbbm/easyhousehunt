@@ -1,3 +1,4 @@
+import { track } from "@/lib/analytics";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,7 +44,7 @@ export type RequirementInput = Omit<Requirement, "id" | "user_id" | "created_at"
 
 // Any screen can ask the app to open the requirement form.
 export const OPEN_REQUIREMENT = "ehh:open-requirement";
-export const openRequirement = () => window.dispatchEvent(new Event(OPEN_REQUIREMENT));
+export const openRequirement = () => { track("requirement_open"); window.dispatchEvent(new Event(OPEN_REQUIREMENT)); };
 
 /** Same rules as the database's requirement_fits(), for showing matches instantly. */
 export function fits(r: Pick<Requirement, "areas" | "radius_km" | "property_type" | "bhk" | "budget_max" | "furnishing" | "move_in" | "tenant_type">, p: Property) {

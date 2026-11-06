@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const STALE_DAYS = 21;
 
 const VISITOR_KEY = "ehh_vid";
-function visitorId(): string {
+export function visitorId(): string {
   try {
     let v = localStorage.getItem(VISITOR_KEY);
     if (!v) { v = crypto.randomUUID(); localStorage.setItem(VISITOR_KEY, v); }

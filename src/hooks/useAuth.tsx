@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { track } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -31,6 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // New account (created in the last 2 minutes) → count a sign-up once per browser.
+      const u = session?.user;
+      if (_event === "SIGNED_IN" && u?.created_at && Date.now() - new Date(u.created_at).getTime() < 120_000) {
+        try { if (!localStorage.getItem("ehh_signup_" + u.id)) { localStorage.setItem("ehh_signup_" + u.id, "1"); track("signup"); } } catch { /* ignore */ }
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

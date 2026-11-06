@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 
 export type Visit = {
   id: string; property_id: string; tenant_id: string; owner_id: string; slots: string[]; chosen_slot: string | null;
@@ -16,6 +17,7 @@ export async function requestVisit(propertyId: string, slots: Date[], note: stri
   const { data, error } = await (supabase as any).rpc("request_visit", { p_property: propertyId, p_slots: slots.map((d) => d.toISOString()), p_note: note || null });
   if (error) return { error: errText(error) };
   notify(String(data));
+  track("visit_request", { propertyId });
   return { error: null };
 }
 export async function respondVisit(id: string, action: "confirm" | "decline", slot?: string) {

@@ -30,6 +30,7 @@ import { Property } from "./types/property";
 import { toast } from "sonner";
 import { logListingView } from "@/lib/insights";
 import { rankScore } from "@/lib/quality";
+import { track } from "@/lib/analytics";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
 import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 import { LOCALITIES } from "@/data/localities";
@@ -284,6 +285,7 @@ function App() {
   }, [user?.id, requirementAfterLogin]);
 
   const handleListProperty = () => {
+    track("list_start");
     if (user) { setWizardOpen(true); }
     else { setAuthIntent("owner"); setAuthModalOpen(true); }
   };
@@ -303,7 +305,16 @@ function App() {
     if (detailProperty && !detailProperty.is_sample) logListingView(detailProperty.id);
   }, [detailProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { track("visit"); }, []);
+  useEffect(() => {
+    if (filters.area?.name) track("area_search", { area: filters.area.name });
+  }, [filters.area?.name]);
+  useEffect(() => {
+    if (detailProperty && !detailProperty.is_sample) track("listing_open", { propertyId: detailProperty.id });
+  }, [detailProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleConnectWithOwner = () => {
+    if (detailProperty) track("contact_click", { propertyId: detailProperty.id });
     if (user) { setChatProperty(detailProperty); setDetailProperty(null); }
     else { setAuthIntent("tenant"); setAuthModalOpen(true); }
   };
