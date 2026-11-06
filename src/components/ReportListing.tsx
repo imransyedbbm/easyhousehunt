@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { Flag, X } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ export default function ReportListing({ propertyId, signedIn, onRequireLogin }: 
   onRequireLogin: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   const [reason, setReason] = useState<string>("");
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,7 +43,7 @@ export default function ReportListing({ propertyId, signedIn, onRequireLogin }: 
         onClick={() => (signedIn ? setOpen(true) : onRequireLogin())}
         className="mt-4 inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-300"
       >
-        <Flag className="h-3.5 w-3.5" /> Report this listing
+        <Flag className="h-3.5 w-3.5" /> {t("Report this listing")}
       </button>
 
       {open && (

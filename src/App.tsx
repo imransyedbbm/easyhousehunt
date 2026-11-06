@@ -1,3 +1,5 @@
+import LangSwitch from "@/components/LangSwitch";
+import { useT } from "@/lib/i18n";
 import { linkKey } from "@/lib/share";
 import BrandLogo from "@/components/BrandLogo";
 import { lazy, Suspense, useEffect, useState } from "react";
@@ -46,6 +48,7 @@ const initialArea = (() => {
 
 function App() {
   const { user, signOut } = useAuth();
+  const t = useT();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -425,11 +428,11 @@ function App() {
             <div className="flex gap-2">
               <button onClick={handleListProperty}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 py-3 rounded font-semibold text-sm">
-                <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> List Your Property</span>
+                <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> {t("List Your Property")}</span>
               </button>
               <button onClick={openRequirement}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 py-3 rounded font-semibold text-sm">
-                <span className="inline-flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> Post Requirement</span>
+                <span className="inline-flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> {t("Post Requirement")}</span>
               </button>
             </div>
             <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 text-[11px] text-gray-400">
@@ -440,6 +443,7 @@ function App() {
               <a href="/about.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">About</a>
               <span>·</span>
               <a href="/contact.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Contact</a>
+              <LangSwitch className="!bg-transparent" />
               <InstallLink className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 [&>svg]:h-3 [&>svg]:w-3" />
             </div>
           </div>

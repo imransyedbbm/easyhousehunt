@@ -1,3 +1,5 @@
+import LangSwitch from "@/components/LangSwitch";
+import { useT, getLang } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { Search, MapPin, ShieldCheck, MessageCircle, BellRing, ArrowRight, X } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
@@ -25,6 +27,8 @@ export default function Welcome({
   onListProperty: () => void;
 }) {
   const [q, setQ] = useState("");
+  const t = useT();
+
   const done = (fn: () => void) => { try { localStorage.setItem(KEY, "1"); } catch { /* private mode */ } fn(); };
   const popular = useMemo(() => POPULAR.map((n) => LOCALITIES.find((l) => l.name === n)).filter(Boolean) as Locality[], []);
   const matches = useMemo(() => {
@@ -41,12 +45,13 @@ export default function Welcome({
             <X className="h-5 w-5" />
           </button>
           <BrandLogo size="md" />
+          <LangSwitch className="mt-4" />
           <h1 className="mt-6 text-3xl font-extrabold leading-tight text-white sm:text-4xl">
-            Find your next home in Bengaluru.<br />
-            <span className="text-orange-400">No brokers. No brokerage.</span>
+            {t("Find your next home in Bengaluru.")}<br />
+            <span className="text-orange-400">{t("No brokers. No brokerage.")}</span>
           </h1>
           <p className="mt-3 text-gray-400">
-            Homes, PGs and office spaces listed directly by owners. Browse on the map and chat with the owner yourself.
+            {t("Homes, PGs and office spaces listed directly by owners. Browse on the map and chat with the owner yourself.")}
           </p>
 
           <div className="relative mt-6">
@@ -56,7 +61,7 @@ export default function Welcome({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && matches[0]) done(() => onPickArea(matches[0])); }}
-              placeholder="Which area? e.g. Koramangala"
+              placeholder={t("Which area? e.g. Koramangala")}
               aria-label="Search by area"
               className="w-full rounded-2xl border border-gray-700 bg-gray-800/80 py-4 pl-12 pr-4 text-base text-white placeholder-gray-500 outline-none focus:border-orange-500"
             />
@@ -85,11 +90,11 @@ export default function Welcome({
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button onClick={() => done(onBrowse)}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3.5 font-semibold text-white hover:bg-orange-600">
-              {listingCount > 0 ? `Browse ${listingCount} homes on the map` : "Browse homes on the map"} <ArrowRight className="h-4 w-4" />
+              {listingCount > 0 && getLang() === "en" ? `Browse ${listingCount} homes on the map` : t("Browse homes on the map")} <ArrowRight className="h-4 w-4" />
             </button>
             <button onClick={() => done(onListProperty)}
               className="flex-1 rounded-2xl border border-gray-600 bg-gray-800 px-5 py-3.5 font-semibold text-white hover:bg-gray-700">
-              I'm an owner · list free
+              {t("I'm an owner · list free")}
             </button>
           </div>
 
@@ -98,16 +103,16 @@ export default function Welcome({
               { icon: ShieldCheck, t: "Zero brokerage", d: "Deal directly with owners. We never charge tenants." },
               { icon: MessageCircle, t: "Chat with owners", d: "Message the owner in the app. No number-sharing needed." },
               { icon: BellRing, t: "Get alerted", d: "Post what you need and we'll email you when it's listed." },
-            ].map(({ icon: Icon, t, d }) => (
-              <div key={t}>
+            ].map(({ icon: Icon, t: title, d }) => (
+              <div key={title}>
                 <Icon className="h-5 w-5 text-orange-400" />
-                <p className="mt-2 text-sm font-semibold text-white">{t}</p>
-                <p className="mt-0.5 text-xs text-gray-400">{d}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{t(title)}</p>
+                <p className="mt-0.5 text-xs text-gray-400">{t(d)}</p>
               </div>
             ))}
           </div>
           <p className="mt-6 text-center text-xs text-gray-500">
-            <a href="/rent" className="hover:text-gray-300">Browse by area</a> · <a href="/about.html" className="hover:text-gray-300">About</a>
+            <a href="/rent" className="hover:text-gray-300">{t("Browse by area")}</a> · <a href="/about.html" className="hover:text-gray-300">{t("About")}</a>
           </p>
         </div>
       </div>

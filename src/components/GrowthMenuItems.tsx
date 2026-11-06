@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Download, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useInstallApp } from "@/lib/install";
@@ -40,6 +41,7 @@ export function InstallButton({ install, onDone, className, label = "Install the
 /** Small footer link, shown only when installing is possible. */
 export function InstallLink({ className }: { className?: string }) {
   const { canInstall, install } = useInstallApp();
+  const t = useT();
   if (!canInstall) return null;
-  return <InstallButton install={install} className={className} label="Install app" />;
+  return <InstallButton install={install} className={className} label={t("Install app")} />;
 }

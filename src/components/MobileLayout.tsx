@@ -1,3 +1,5 @@
+import LangSwitch from "@/components/LangSwitch";
+import { useT } from "@/lib/i18n";
 import { openRequirement } from "@/lib/requirements";
 import BrandLogo from "@/components/BrandLogo";
 import { useState, useRef } from "react";
@@ -56,6 +58,7 @@ export default function MobileLayout({
   onConnectOwner: () => void;
 }) {
   const { user } = useAuth();
+  const t = useT();
   const [sheetState, setSheetState] = useState<SheetState>("peek");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -132,6 +135,7 @@ export default function MobileLayout({
                       className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
                       <Scale className="h-4 w-4" /> RentRight {!rentRightUnlocked && <Lock className="ml-auto h-3.5 w-3.5" />}
                     </button>
+                    <div className="border-t border-gray-700 px-4 py-2.5"><LangSwitch /></div>
                     <GrowthMenuItems onDone={() => setMobileMenuOpen(false)} />
                     <div className="border-t border-gray-700 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
                       <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-white">Privacy</a>
@@ -157,7 +161,7 @@ export default function MobileLayout({
               <InstallLink className="inline-flex items-center gap-1 rounded-full bg-gray-800 px-3 py-1.5 text-xs font-medium text-white [&>svg]:h-3.5 [&>svg]:w-3.5" />
               <button onClick={onSignIn}
                 className="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-full font-medium">
-                Sign in
+                {t("Sign in")}
               </button>
             </div>
           )}
@@ -180,11 +184,11 @@ export default function MobileLayout({
       <div className="absolute left-4 z-20 flex gap-2" style={{bottom: `calc(${sheetHeights[sheetState]} + 16px)`, transition: "bottom 0.3s ease"}}>
         <button onClick={onListProperty}
           className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
-          <span className="inline-flex items-center gap-1"><Plus className="h-4 w-4" /> List</span>
+          <span className="inline-flex items-center gap-1"><Plus className="h-4 w-4" /> {t("List")}</span>
         </button>
         <button onClick={openRequirement}
           className="bg-gray-900/95 hover:bg-gray-800 border border-gray-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
-          <span className="inline-flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Requirement</span>
+          <span className="inline-flex items-center gap-1"><ClipboardList className="h-4 w-4" /> {t("Requirement")}</span>
         </button>
       </div>
 
@@ -204,12 +208,12 @@ export default function MobileLayout({
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="flex items-center justify-between">
             <p className="text-white text-sm font-semibold">
-              {loading ? "Finding homes…" : loadFailed ? "Couldn't load listings" : `${properties.length} ${properties.length === 1 ? "property" : "properties"}`}
+              {loading ? t("Finding homes…") : loadFailed ? "Couldn't load listings" : `${properties.length} ${properties.length === 1 ? "property" : "properties"}`}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setSheetState("half")}
                 className="text-xs text-gray-400">
-                {sheetState === "peek" ? <span className="inline-flex items-center gap-1"><ChevronUp className="h-3.5 w-3.5" />Show</span> : sheetState === "full" ? <span className="inline-flex items-center gap-1"><ChevronDown className="h-3.5 w-3.5" />Less</span> : ""}
+                {sheetState === "peek" ? <span className="inline-flex items-center gap-1"><ChevronUp className="h-3.5 w-3.5" />{t("Show")}</span> : sheetState === "full" ? <span className="inline-flex items-center gap-1"><ChevronDown className="h-3.5 w-3.5" />{t("Less")}</span> : ""}
               </button>
             </div>
           </div>
@@ -247,7 +251,7 @@ export default function MobileLayout({
           <div className="flex items-center justify-center flex-1 gap-2"
             onClick={() => setSheetState("half")}>
             <p className="text-gray-400 text-sm">
-              {loading ? "Finding homes near you…" : loadFailed ? "Tap to retry" : `${properties.length} ${properties.length === 1 ? "property" : "properties"} nearby — tap to browse`}
+              {loading ? t("Finding homes near you…") : loadFailed ? "Tap to retry" : `${properties.length} ${properties.length === 1 ? "property" : "properties"} nearby — tap to browse`}
             </p>
           </div>
         )}
