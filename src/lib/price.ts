@@ -38,3 +38,10 @@ export function pricePerSqft(p: Priced): string | null {
   if (!isSale(p) || !p.sale_price || !p.area_sqft) return null;
   return `₹${Math.round(p.sale_price / p.area_sqft).toLocaleString("en-IN")}/sq ft`;
 }
+
+/** Monthly rent per sq ft, shown for commercial rentals: "₹85/sq ft/mo". */
+export function rentPerSqft(p: Priced & { property_type?: string | null }): string | null {
+  if (isSale(p) || p.property_type !== "Commercial" || !p.rent || !p.area_sqft) return null;
+  const v = p.rent / p.area_sqft;
+  return `₹${v >= 10 ? Math.round(v) : v.toFixed(1)}/sq ft/mo`;
+}

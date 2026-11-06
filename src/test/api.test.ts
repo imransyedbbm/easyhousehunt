@@ -142,3 +142,27 @@ describe("rent guide", () => {
     expect(r.body).toContain("2 BHK from ₹38,000");
   });
 });
+
+describe("office space pages", () => {
+  const OFFICE = { ...HOME, id: "o1", title: "Bright office near Sony signal", bhk: null, property_type: "Commercial", commercial_type: "Office space", rent: 170000, area_sqft: 2000, share_code: "off234" };
+  it("computes ₹/sq ft by space type from rentals with a size", async () => {
+    const { sqftStats } = await import("../../api/office.js");
+    const s = sqftStats([OFFICE, { ...OFFICE, rent: 90000, area_sqft: 1000 }, { ...OFFICE, area_sqft: null }, { ...OFFICE, listing_type: "sale" }]);
+    expect(s).toEqual([{ type: "Office space", count: 2, median: 88, low: 85, high: 90 }]);
+  });
+  it("renders the area page with guide, FAQ and listings", async () => {
+    const { default: h } = await import("../../api/office.js");
+    rows = [OFFICE];
+    const r = res(); await h({ query: { area: "koramangala" } }, r);
+    expect(r.code).toBe(200);
+    expect(calls[0]).toContain("property_type=eq.Commercial");
+    expect(r.body).toContain("Office space for rent in Koramangala");
+    expect(r.body).toContain("₹85/sq ft");
+    expect(r.body).toContain('"@type":"FAQPage"');
+  });
+  it("is in the sitemap", async () => {
+    const { default: h } = await import("../../api/sitemap.js");
+    const r = res(); await h({ query: {} }, r);
+    expect(r.body).toContain("/office-space/koramangala");
+  });
+});

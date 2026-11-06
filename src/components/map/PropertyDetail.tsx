@@ -7,7 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import PhotoGallery from "./PhotoGallery";
 import SaveButton from "@/components/SaveButton";
-import { formatPrice, pricePerSqft } from "@/lib/price";
+import { formatPrice, pricePerSqft, rentPerSqft } from "@/lib/price";
+import { seatEstimate } from "@/lib/commercial";
 import { httpPhotos } from "@/lib/photos";
 import { addRecent } from "@/lib/recentlyViewed";
 import ReportListing from "@/components/ReportListing";
@@ -100,8 +101,8 @@ export default function PropertyDetail({
             <h2 className="text-xl font-bold">{property.title || "Untitled"}</h2>
             <p className="text-green-400 text-2xl font-bold mt-1">
               {formatPrice(property)}
-              {pricePerSqft(property) && (
-                <span className="ml-2 text-sm font-normal text-gray-400">{pricePerSqft(property)}</span>
+              {(pricePerSqft(property) || rentPerSqft(property)) && (
+                <span className="ml-2 text-sm font-normal text-gray-400">{pricePerSqft(property) || rentPerSqft(property)}</span>
               )}
             </p>
           </div>
@@ -173,6 +174,11 @@ export default function PropertyDetail({
           )}
           {property.distance_label && (
             <span className="bg-blue-900/50 text-blue-200 px-3 py-1 rounded-full text-sm">🚗 {property.distance_label}</span>
+          )}
+          {seatEstimate(property) && (
+            <span className="bg-gray-800 text-gray-200 px-3 py-1 rounded-full text-sm" title="Estimate at ~70 sq ft per workstation">
+              🪑 Fits ~{seatEstimate(property)} workstations
+            </span>
           )}
           {property.is_verified && (
             <span className="inline-flex items-center gap-1 bg-blue-900/60 text-blue-200 px-3 py-1 rounded-full text-sm" title="EasyHouseHunt has verified this owner">

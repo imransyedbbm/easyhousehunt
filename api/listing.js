@@ -119,7 +119,9 @@ ${sale ? `<div class="warn">Before paying any money, verify title deeds, khata, 
 <p class="note">Zero brokerage. You chat with the owner directly on EasyHouseHunt.</p>
 </div></aside></div>
 ${similar.length ? `<h2>More homes nearby</h2><div class="grid">${similar.map(tile).join("")}</div>` : ""}
-${area ? `<p style="margin-top:28px"><a class="btn btn-d" href="/rent/${esc(area.slug)}">All homes for rent in ${esc(area.name)} →</a></p>` : ""}
+${area ? (p.property_type === "Commercial"
+  ? `<p style="margin-top:28px"><a class="btn btn-d" href="/office-space/${esc(area.slug)}">All office & commercial space in ${esc(area.name)} →</a></p>`
+  : `<p style="margin-top:28px"><a class="btn btn-d" href="/rent/${esc(area.slug)}">All homes for rent in ${esc(area.name)} →</a></p>`) : ""}
 </main>
 <div class="bar"><a class="btn btn-g" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn btn-o" href="${esc(appUrl)}">Contact owner</a></div>`;
 

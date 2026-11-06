@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { logListingView } from "@/lib/insights";
 import { rankScore } from "@/lib/quality";
 import { track } from "@/lib/analytics";
+import { SIZE_BANDS } from "@/lib/commercial";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
 import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 import { LOCALITIES } from "@/data/localities";
@@ -87,7 +88,8 @@ function App() {
   }, []);
   const [isAdmin, setIsAdmin] = useState(false);
   const [filters, setFilters] = useState<Filters>({
-    bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", propertyType: "All", occupancy: [], area: initialArea,
+    bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", occupancy: [], area: initialArea,
+    propertyType: initialParams.get("segment") === "commercial" ? "Commercial" : "All",
   });
   const [welcomeOpen, setWelcomeOpen] = useState(shouldShowWelcome);
   const [filtersKey, setFiltersKey] = useState(0);
@@ -208,6 +210,10 @@ function App() {
       if (p.property_type === "Commercial") return false;
     } else if (filters.propertyType !== "All" && p.property_type !== filters.propertyType) return false;
     if (filters.commercialType?.length && !filters.commercialType.includes(p.commercial_type ?? "")) return false;
+    if (filters.sizeBand?.length) {
+      const a = p.area_sqft ?? -1;
+      if (!SIZE_BANDS.some((b) => filters.sizeBand!.includes(b.key) && a >= b.min && a <= b.max)) return false;
+    }
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (!p.title?.toLowerCase().includes(q) && !p.address?.toLowerCase().includes(q)) return false;
@@ -296,13 +302,13 @@ function App() {
     // From a push notification: /?open=messages | /?open=visits
     const open = q.get("open");
     if (open === "messages" || open === "visits") { setInboxTab(open); setInboxOpen(true); q.delete("open"); }
-    if (!["area", "list", "requirement"].some((k) => q.has(k))) {
+    if (!["area", "list", "requirement", "segment"].some((k) => q.has(k))) {
       if (open) window.history.replaceState(null, "", window.location.pathname + (q.toString() ? `?${q}` : ""));
       return;
     }
     if (q.has("list")) handleListProperty();
     if (q.has("requirement")) openRequirement();
-    ["area", "list", "requirement"].forEach((k) => q.delete(k));
+    ["area", "list", "requirement", "segment"].forEach((k) => q.delete(k));
     const rest = q.toString();
     window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
