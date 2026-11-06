@@ -5,8 +5,9 @@ import { formatPrice } from "@/lib/price";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BadgeCheck, TrendingUp, TrendingDown } from "lucide-react";
+import AdminInsights from "@/components/AdminInsights";
 
-type Tab = "pending" | "reports" | "listings" | "messages" | "users" | "demand";
+type Tab = "pending" | "insights" | "reports" | "listings" | "messages" | "users" | "demand";
 
 const REPORT_LABEL: Record<string, string> = {
   let_out: "Already let out / sold", wrong_details: "Wrong details", broker: "Broker posing as owner", fake: "Fake / scam", other: "Other",
@@ -191,6 +192,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
   const TABS = [
     { key: "pending", label: "Pending", count: stats.pending },
+    { key: "insights", label: "Insights", count: "📈" as any },
     { key: "reports", label: "Reports", count: reports.length },
     { key: "listings", label: "Listings", count: listings.length },
     { key: "messages", label: "Messages", count: stats.messages },
@@ -425,6 +427,8 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                 ) : (
                   pending.map(renderListing)
                 ))}
+
+              {tab === "insights" && <AdminInsights listings={listings} />}
 
               {tab === "reports" && (() => {
                 if (reports.length === 0) return (
