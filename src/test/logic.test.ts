@@ -102,3 +102,31 @@ describe("commercial", () => {
     expect(rentPerSqft({ property_type: "Apartment", rent: 40000, area_sqft: 1000 })).toBeNull();
   });
 });
+
+import { parseCsv } from "@/lib/csv";
+import { parseListings, TEMPLATE } from "@/lib/bulkImport";
+describe("bulk import", () => {
+  it("parses quoted CSV fields", () => {
+    expect(parseCsv('a,b\r\n"x, y","say ""hi""\nthere"\n')).toEqual([["a", "b"], ["x, y", 'say "hi"\nthere']]);
+  });
+  it("accepts the template rows and geocodes from the address", () => {
+    const { rows, headerError } = parseListings(TEMPLATE, "admin-id");
+    expect(headerError).toBeNull();
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.data)).toBe(true);
+    expect(rows[0].data).toMatchObject({ status: "approved", bhk: 2, rent: 38000, landlord_id: "admin-id", amenities: ["Lift", "Power backup", "Covered parking"] });
+    expect(rows[1].data).toMatchObject({ status: "pending", commercial_type: "Office space", bhk: null });
+    expect(rows[1].warnings.join()).toMatch(/Embassy TechVillage/);
+    expect(rows[0].owner).toEqual({ name: "Ravi Kumar", phone: "9845012345" });
+  });
+  it("rejects bad rows with reasons", () => {
+    const csv = "title,address,property_type,rent,bhk\n,Nowhere,Castle,,\nOk,\"HSR Layout, Bengaluru\",Apartment,25000,1";
+    const { rows } = parseListings(csv, "a");
+    expect(rows[0].data).toBeNull();
+    expect(rows[0].errors.join()).toMatch(/title is empty.*property_type/);
+    expect(rows[1].data).toMatchObject({ rent: 25000, bhk: 1 });
+  });
+  it("flags missing columns", () => {
+    expect(parseListings("name,price\nx,1", "a").headerError).toMatch(/title, address, property_type/);
+  });
+});
