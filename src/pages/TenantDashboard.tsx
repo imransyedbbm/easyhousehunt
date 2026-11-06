@@ -5,6 +5,7 @@ import CompareHomes from "@/components/CompareHomes";
 import { formatPrice } from "@/lib/price";
 import { httpPhotos } from "@/lib/photos";
 import { toast } from "sonner";
+import { shortlistUrl } from "@/lib/invite";
 
 export default function TenantDashboard({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
@@ -102,7 +103,20 @@ export default function TenantDashboard({ onClose }: { onClose: () => void }) {
                 </div>
               ) : (
                 <>
-                  <p className="text-xs text-gray-400">Tick 2 or 3 homes to compare them side by side.</p>
+                  {(() => {
+                    const pool = saved.filter((s) => s.properties?.share_code && s.properties.status === "approved" && s.properties.availability !== "let_out");
+                    const chosen = picked.length ? pool.filter((s) => picked.includes(s.id)) : pool;
+                    if (!chosen.length) return null;
+                    const url = shortlistUrl(chosen.map((s) => s.properties.share_code));
+                    return (
+                      <a href={`https://wa.me/?text=${encodeURIComponent(`Have a look at these homes I shortlisted:\n${url}`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 rounded-xl bg-green-700 py-2.5 text-sm font-semibold text-white hover:bg-green-600">
+                        Share {picked.length ? `${chosen.length} selected` : `all ${chosen.length}`} with family on WhatsApp
+                      </a>
+                    );
+                  })()}
+                  <p className="text-xs text-gray-400">Tick 2 or 3 homes to compare them side by side, or to share just those.</p>
                   {saved.filter((s) => s.properties).map((s) => {
                     const p = s.properties;
                     const ph = httpPhotos(p.media_urls)[0];

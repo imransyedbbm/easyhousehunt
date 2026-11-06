@@ -30,6 +30,7 @@ import { Property } from "./types/property";
 import { toast } from "sonner";
 import { logListingView } from "@/lib/insights";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
+import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 import { LOCALITIES } from "@/data/localities";
 
 const areaSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -375,6 +376,7 @@ function App() {
                           <Settings className="h-4 w-4" /> Admin Panel
                         </button>
                       )}
+                      <GrowthMenuItems onDone={() => setMenuOpen(false)} />
                       <div className="border-t border-gray-700">
                         <button onClick={() => { signOut(); setMenuOpen(false); }}
                           className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
@@ -409,6 +411,7 @@ function App() {
               <a href="/about.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">About</a>
               <span>·</span>
               <a href="/contact.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Contact</a>
+              <InstallLink className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 [&>svg]:h-3 [&>svg]:w-3" />
             </div>
           </div>
           <SearchFilters key={filtersKey} onChange={setFilters} initial={filters} />
