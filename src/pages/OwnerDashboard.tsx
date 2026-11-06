@@ -12,6 +12,7 @@ import { Eye, Heart, MessageSquare, Pencil, Trash2, CheckCircle2, Share2 } from 
 import { toast } from "sonner";
 import { useListingStats, daysSince, confirmListing, setLetOut, STALE_DAYS } from "@/lib/insights";
 import { whatsappShareUrl } from "@/lib/share";
+import { listingQuality } from "@/lib/quality";
 
 type Tab = "messages" | "listings" | "saved";
 
@@ -84,7 +85,7 @@ export default function OwnerDashboard({
     if (!user) return;
     const { data } = await supabase
       .from("properties")
-      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price, availability, confirmed_at, share_code, property_type")
+      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price, availability, confirmed_at, share_code, property_type, media_urls, description, amenities, area_sqft, deposit, furnishing, availability_date, preferred_tenants, latitude")
       .eq("market", "india")
       .eq("landlord_id", user.id)
       .order("created_at", { ascending: false });
@@ -417,6 +418,22 @@ export default function OwnerDashboard({
                             </div>
                           </div>
                         )}
+                        {l.status !== "rejected" && "media_urls" in l && (() => {
+                          const q = listingQuality(l);
+                          if (q.score >= 90) return null;
+                          return (
+                            <button onClick={() => setEditListing(l)} className="mt-3 block w-full rounded-lg bg-gray-900/70 p-2.5 text-left hover:bg-gray-900">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-300">Listing strength <b className={q.score >= 70 ? "text-yellow-300" : "text-red-300"}>{q.score}%</b></span>
+                                <span className="text-orange-400">Improve →</span>
+                              </div>
+                              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-700">
+                                <div className={`h-full ${q.score >= 70 ? "bg-yellow-400" : "bg-red-400"}`} style={{ width: `${q.score}%` }} />
+                              </div>
+                              {q.tips[0] && <p className="mt-1.5 text-[11px] text-gray-400">Next: {q.tips[0].label} (+{q.tips[0].points})</p>}
+                            </button>
+                          );
+                        })()}
                         {live && st && st.views >= 30 && st.enquiries === 0 && (
                           <p className="mt-2 text-xs text-amber-300">Lots of views but no enquiries yet. Better photos or a sharper price usually help.</p>
                         )}
