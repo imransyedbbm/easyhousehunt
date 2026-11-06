@@ -8,6 +8,10 @@ import { selectProperty } from "@/lib/searchStore";
 import { useSavedIds } from "@/lib/saved";
 import SaveButton from "@/components/SaveButton";
 import { formatPrice } from "@/lib/price";
+import { Eye, Heart, MessageSquare, Pencil, Trash2, CheckCircle2, Share2 } from "lucide-react";
+import { toast } from "sonner";
+import { useListingStats, daysSince, confirmListing, setLetOut, STALE_DAYS } from "@/lib/insights";
+import { whatsappShareUrl } from "@/lib/share";
 
 type Tab = "messages" | "listings" | "saved";
 
@@ -47,6 +51,22 @@ export default function OwnerDashboard({
   const [openProp, setOpenProp] = useState<string | null>(null);
   const [chat, setChat] = useState<{ propertyId: string; title: string; otherId: string; otherLabel: string } | null>(null);
   const [editListing, setEditListing] = useState<any>(null);
+  const [statsVersion, setStatsVersion] = useState(0);
+  const stats = useListingStats(!!user && tab === "listings" && statsVersion >= 0);
+
+  const confirm = async (l: any) => {
+    const { error } = await confirmListing(l.id);
+    if (error) { toast.error("Couldn't update. Try again."); return; }
+    setListings((ls) => ls.map((x) => (x.id === l.id ? { ...x, confirmed_at: new Date().toISOString(), availability: "available" } : x)));
+    toast.success("Thanks! Marked as still available.");
+    setStatsVersion((v) => v + 1);
+  };
+  const letOut = async (l: any, out: boolean) => {
+    const { error } = await setLetOut(l.id, out);
+    if (error) { toast.error("Couldn't update. Try again."); return; }
+    setListings((ls) => ls.map((x) => (x.id === l.id ? { ...x, availability: out ? "let_out" : "available", confirmed_at: new Date().toISOString() } : x)));
+    toast.success(out ? "Marked as let out. It's off the map now." : "Back on the map.");
+  };
 
   // Message text is not loaded here on purpose: this screen only shows who and how many
   const loadMessages = async () => {
@@ -64,11 +84,16 @@ export default function OwnerDashboard({
     if (!user) return;
     const { data } = await supabase
       .from("properties")
-      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price")
+      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price, availability, confirmed_at, share_code, property_type")
       .eq("market", "india")
       .eq("landlord_id", user.id)
       .order("created_at", { ascending: false });
-    setListings((data as any[]) || []);
+    if (data) { setListings(data as any[]); return; }
+    const { data: basic } = await supabase
+      .from("properties")
+      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price")
+      .eq("market", "india").eq("landlord_id", user.id).order("created_at", { ascending: false });
+    setListings((basic as any[]) || []);
   };
 
   // Saved items: first the ids, then the listings that are still live (taken-down ones just drop out)
@@ -334,14 +359,27 @@ export default function OwnerDashboard({
                       <p>No listings yet</p>
                     </div>
                   ) : (
-                    listings.map((l) => (
-                      <div key={l.id} className="bg-gray-800 rounded-xl p-4">
+                    <>
+                    {listings.some((l) => l.status === "approved" && l.availability !== "let_out" && daysSince(l.confirmed_at) >= STALE_DAYS && l.confirmed_at !== undefined) && (
+                      <div className="rounded-xl border border-amber-700/60 bg-amber-950/40 p-3 text-sm text-amber-200">
+                        Some listings haven't been confirmed in {STALE_DAYS}+ days. Tenants trust fresh listings more, so take a second to confirm or mark them let out.
+                      </div>
+                    )}
+                    {listings.map((l) => {
+                      const st = stats[String(l.id)];
+                      const live = l.status === "approved";
+                      const isLetOut = l.availability === "let_out";
+                      const age = daysSince(l.confirmed_at);
+                      const stale = live && !isLetOut && l.confirmed_at !== undefined && age >= STALE_DAYS;
+                      const shareable = l.share_code ? { ...l, id: String(l.id), media_urls: [] } : null;
+                      return (
+                      <div key={l.id} className={`bg-gray-800 rounded-xl p-4 ${stale ? "ring-1 ring-amber-600/60" : ""}`}>
                         <div className="flex justify-between items-start">
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold">{l.title}</p>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${l.status === "approved" ? "bg-green-900 text-green-400" : l.status === "rejected" ? "bg-red-900 text-red-400" : "bg-yellow-900 text-yellow-300"}`}>
-                                {l.status === "approved" ? "Live" : l.status === "rejected" ? "Not approved" : "Pending review"}
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${isLetOut ? "bg-gray-700 text-gray-300" : live ? "bg-green-900 text-green-400" : l.status === "rejected" ? "bg-red-900 text-red-400" : "bg-yellow-900 text-yellow-300"}`}>
+                                {isLetOut ? (l.listing_type === "sale" ? "Sold" : "Let out") : live ? "Live" : l.status === "rejected" ? "Not approved" : "Pending review"}
                               </span>
                             </div>
                             <p className="text-green-400 font-bold">{formatPrice(l)}</p>
@@ -351,16 +389,63 @@ export default function OwnerDashboard({
                                 Not approved{l.rejection_reason ? ": " + l.rejection_reason : ""}. Update the details and save to resubmit.
                               </p>
                             )}
-                            <p className="text-gray-400 text-xs mt-1">{l.bhk} BHK · {l.address}</p>
-                            <p className="text-gray-500 text-xs mt-1">Listed {new Date(l.created_at).toLocaleDateString()}</p>
+                            <p className="text-gray-400 text-xs mt-1 truncate">{l.bhk ? `${l.bhk} BHK · ` : ""}{l.address}</p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Listed {new Date(l.created_at).toLocaleDateString("en-IN")}
+                              {live && isFinite(age) && !isLetOut && <> · confirmed {age === 0 ? "today" : `${age}d ago`}</>}
+                            </p>
                           </div>
-                          <div className="flex flex-col gap-1 ml-3">
-                            <button onClick={() => setEditListing(l)} className="text-orange-400 hover:text-orange-300 text-xs">✏️ Edit</button>
-                            <button onClick={() => deleteListing(l.id)} className="text-red-400 hover:text-red-300 text-xs">🗑 Delete</button>
+                          <div className="flex flex-col items-end gap-2 ml-3">
+                            <button onClick={() => setEditListing(l)} className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 text-xs"><Pencil className="h-3.5 w-3.5" /> Edit</button>
+                            <button onClick={() => deleteListing(l.id)} className="inline-flex items-center gap-1 text-red-400 hover:text-red-300 text-xs"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
                           </div>
                         </div>
+
+                        {live && st && (
+                          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                            <div className="rounded-lg bg-gray-900/70 py-2">
+                              <p className="flex items-center justify-center gap-1 text-lg font-bold"><Eye className="h-4 w-4 text-gray-400" />{st.views}</p>
+                              <p className="text-[11px] text-gray-400">views{st.views_7d ? ` · ${st.views_7d} this week` : ""}</p>
+                            </div>
+                            <div className="rounded-lg bg-gray-900/70 py-2">
+                              <p className="flex items-center justify-center gap-1 text-lg font-bold"><Heart className="h-4 w-4 text-pink-400" />{st.saves}</p>
+                              <p className="text-[11px] text-gray-400">saved</p>
+                            </div>
+                            <div className="rounded-lg bg-gray-900/70 py-2">
+                              <p className="flex items-center justify-center gap-1 text-lg font-bold"><MessageSquare className="h-4 w-4 text-orange-400" />{st.enquiries}</p>
+                              <p className="text-[11px] text-gray-400">enquiries</p>
+                            </div>
+                          </div>
+                        )}
+                        {live && st && st.views >= 30 && st.enquiries === 0 && (
+                          <p className="mt-2 text-xs text-amber-300">Lots of views but no enquiries yet. Better photos or a sharper price usually help.</p>
+                        )}
+
+                        {live && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {isLetOut ? (
+                              <button onClick={() => letOut(l, false)} className="rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-semibold hover:bg-gray-600">Available again</button>
+                            ) : (
+                              <>
+                                <button onClick={() => confirm(l)} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold ${stale ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-gray-700 hover:bg-gray-600"}`}>
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Still available
+                                </button>
+                                <button onClick={() => letOut(l, true)} className="rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-semibold hover:bg-gray-600">
+                                  {l.listing_type === "sale" ? "Mark sold" : "Mark let out"}
+                                </button>
+                              </>
+                            )}
+                            {shareable && !isLetOut && (
+                              <a href={whatsappShareUrl(shareable as any)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold hover:bg-green-600">
+                                <Share2 className="h-3.5 w-3.5" /> Share on WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ))
+                      );
+                    })}
+                    </>
                   )}
                 </div>
               )}

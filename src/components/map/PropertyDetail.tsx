@@ -1,5 +1,6 @@
 import { shareListing, whatsappShareUrl } from "@/lib/share";
 import { availabilityLabel } from "@/lib/requirements";
+import { freshnessLabel } from "@/lib/insights";
 import { useEffect, useState } from "react";
 import { Property } from "../../types/property";
 import { useAuth } from "@/hooks/useAuth";
@@ -156,6 +157,11 @@ export default function PropertyDetail({
           {property.listing_type !== "sale" && (
             <span className="bg-teal-900/60 text-teal-200 px-3 py-1 rounded-full text-sm">
               📅 {availabilityLabel(property.availability_date)}
+            </span>
+          )}
+          {freshnessLabel(property.confirmed_at) && (
+            <span className="bg-green-900/50 text-green-300 px-3 py-1 rounded-full text-sm">
+              ✓ {freshnessLabel(property.confirmed_at)}
             </span>
           )}
           {property.listing_type !== "sale" && !!property.preferred_tenants?.length && (
