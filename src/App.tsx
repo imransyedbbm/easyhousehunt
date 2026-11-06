@@ -91,22 +91,29 @@ function App() {
   async function fetchProperties() {
     setLoadFailed(false);
     try {
-      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price, is_verified, created_at";
-      const query = (fields: string) => supabase
-        .from("properties")
-        .select(fields)
-        .eq("market", "india")
-        .eq("status", "approved")
-        .not("latitude", "is", null)
-        .not("longitude", "is", null)
-        .limit(100);
-      // Let-out homes leave the map; falls back if the availability column isn't there yet.
-      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type, confirmed_at").neq("availability", "let_out");
-      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type").neq("availability", "let_out"));
-      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code").neq("availability", "let_out"));
-      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out"));
-      if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
-      if (error) ({ data, error } = await query(FIELDS));
+      const CORE = ["id", "title", "rent", "bhk", "address", "latitude", "longitude", "deposit", "furnishing", "area_sqft", "description", "amenities", "media_urls", "landlord_id", "property_type", "occupancy", "is_sample", "listing_type", "sale_price"];
+      // Newer columns: if the database doesn't have one yet, drop just that column and retry,
+      // so one missing column can never blank the map.
+      let optional = ["is_verified", "created_at", "availability", "availability_date", "preferred_tenants", "share_code", "commercial_type", "confirmed_at"];
+      const query = (cols: string[]) => {
+        let q = supabase
+          .from("properties")
+          .select(cols.join(", "))
+          .eq("market", "india")
+          .eq("status", "approved")
+          .not("latitude", "is", null)
+          .not("longitude", "is", null);
+        // Let-out homes leave the map.
+        if (cols.includes("availability")) q = q.neq("availability", "let_out");
+        return q.limit(100);
+      };
+      let { data, error } = await query([...CORE, ...optional]);
+      for (let i = 0; error && i < optional.length; i++) {
+        const missing = optional.find((c) => error!.message?.includes(c));
+        if (!missing) { optional = []; } else { optional = optional.filter((c) => c !== missing); }
+        console.warn("properties: retrying without", missing ?? "optional columns");
+        ({ data, error } = await query([...CORE, ...optional]));
+      }
 
       if (error) { console.error("Supabase error:", error.message); setProperties([]); setLoadFailed(true); return; }
 
