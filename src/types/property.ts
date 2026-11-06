@@ -5,6 +5,8 @@ export type Property = {
   commercial_type?: string | null;
   share_code?: string | null;
   availability_date?: string | null;
+  /** Last time the owner confirmed the listing is still available. */
+  confirmed_at?: string | null;
   preferred_tenants?: string[] | null;
   availability?: "available" | "reserved" | "let_out" | string | null;
   distance_m?: number | null;

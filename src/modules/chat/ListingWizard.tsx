@@ -2,6 +2,7 @@ import { COMMERCIAL_TYPES, furnishingOptions, isCommercial } from "@/lib/commerc
 import { uploadListingPhotos } from "@/lib/photos";
 import LocationPicker from "@/components/map/LocationPicker";
 import { formatSalePrice } from "@/lib/price";
+import { rentBenchmark, type Benchmark } from "@/lib/insights";
 import { SALE_ENABLED } from "@/lib/features";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
 }) {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [bench, setBench] = useState<Benchmark | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -221,6 +223,16 @@ export default function ListingWizard({ onClose, onSuccess }: {
 
   const STEPS = ["Property", "Pricing", "Details", "Amenities", "Photos"];
 
+  // Price suggestion: median rent of similar live homes within ~2 km (needs 3+ comparables).
+  useEffect(() => {
+    if (step !== 2 || listingType !== "rent" || !form.latitude || !form.longitude) { setBench(null); return; }
+    let live = true;
+    const bhk = form.property_type === "PG" || commercial ? null : parseInt(form.bhk) || null;
+    rentBenchmark(Number(form.latitude), Number(form.longitude), form.property_type, bhk).then((b) => { if (live) setBench(b); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, listingType, form.latitude, form.longitude, form.property_type, form.bhk]);
+
   const step1Missing = () => {
     const missing: string[] = [];
     if (form.property_type === "Apartment") {
@@ -388,6 +400,16 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 <input type="number" className={inp + " mt-1"} placeholder={listingType === "sale" ? "e.g. 8500000" : "e.g. 35000"} value={form.rent} onChange={e => set("rent", e.target.value)} />
                 {listingType === "sale" && Number(form.rent) > 0 && (
                   <p className="mt-1 text-xs text-green-400">{formatSalePrice(Number(form.rent))}</p>
+                )}
+                {bench && (
+                  <div className="mt-2 rounded-lg bg-gray-800 px-2.5 py-2 text-xs text-gray-300">
+                    Similar homes nearby rent for <b className="text-white">₹{bench.low.toLocaleString("en-IN")}–₹{bench.high.toLocaleString("en-IN")}</b>
+                    {" "}(median ₹{bench.median.toLocaleString("en-IN")}, {bench.n} listings).
+                    {!form.rent && (
+                      <button type="button" onClick={() => set("rent", String(bench.median))} className="ml-1 font-semibold text-orange-400 hover:text-orange-300">Use median</button>
+                    )}
+                    {Number(form.rent) > bench.high * 1.15 && <p className="mt-1 text-amber-300">Your rent is above most nearby listings. Expect fewer enquiries.</p>}
+                  </div>
                 )}
               </div>
               <div>

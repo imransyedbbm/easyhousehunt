@@ -28,6 +28,7 @@ import { OPEN_REQUIREMENT, openRequirement } from "@/lib/requirements";
 const RequirementModal = lazy(() => import("@/components/RequirementModal"));
 import { Property } from "./types/property";
 import { toast } from "sonner";
+import { logListingView } from "@/lib/insights";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
 import { LOCALITIES } from "@/data/localities";
 
@@ -100,7 +101,8 @@ function App() {
         .not("longitude", "is", null)
         .limit(100);
       // Let-out homes leave the map; falls back if the availability column isn't there yet.
-      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type").neq("availability", "let_out");
+      let { data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type, confirmed_at").neq("availability", "let_out");
+      if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code, commercial_type").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants, share_code").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability, availability_date, preferred_tenants").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
@@ -134,7 +136,7 @@ function App() {
       const { data } = await (key.code ? q.eq("share_code", key.code) : q.eq("id", key.id)).maybeSingle();
       if (data) found = toProperty(data);
     }
-    if (found) { setSelectedProperty(found); setDetailProperty(found); }
+    if (found) { setSelectedProperty(found); setDetailProperty(found); logListingView(found.id, "share"); }
   }
 
   function toProperty(p: any): Property {
@@ -161,6 +163,7 @@ function App() {
         share_code: p.share_code ?? null,
         availability: p.availability ?? "available",
         availability_date: p.availability_date ?? null,
+        confirmed_at: p.confirmed_at ?? null,
         preferred_tenants: p.preferred_tenants ?? [],
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,
@@ -272,6 +275,10 @@ function App() {
     window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (detailProperty && !detailProperty.is_sample) logListingView(detailProperty.id);
+  }, [detailProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConnectWithOwner = () => {
     if (user) { setChatProperty(detailProperty); setDetailProperty(null); }
