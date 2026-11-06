@@ -15,6 +15,8 @@ export interface Filters {
   commercialType?: string[];
   occupancy: string[];
   area?: { name: string; lat: number; lng: number } | null;
+  /** Radius around the picked area/office, km (default 2.5). */
+  radiusKm?: number;
   mode?: "rent" | "sale";
 }
 
@@ -263,7 +265,7 @@ export default function SearchFilters({
         {filters.area && (
           <div className="mt-2 flex items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-xs text-white">
             <span>
-              📍 Listings near <b>{filters.area.name}</b>
+              📍 Within <b>{filters.radiusKm ?? 2.5} km</b> of <b>{filters.area.name}</b>
             </span>
             <button
               onClick={() => update({ area: null })}
@@ -272,6 +274,21 @@ export default function SearchFilters({
             >
               ✕
             </button>
+          </div>
+        )}
+        {filters.area && (
+          <div className="mt-2 flex items-center gap-1.5" role="group" aria-label="Distance">
+            {[1, 2.5, 5, 8].map((km) => (
+              <button
+                key={km}
+                onClick={() => update({ radiusKm: km })}
+                className={`flex-1 rounded-full px-2 py-1 text-xs font-medium ${
+                  (filters.radiusKm ?? 2.5) === km ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                {km} km
+              </button>
+            ))}
           </div>
         )}
         {filters.area && searchNote && <p className="mt-1 text-xs text-yellow-300">{searchNote}</p>}

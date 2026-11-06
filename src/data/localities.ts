@@ -652,5 +652,20 @@ export const LOCALITIES: Locality[] = [
   "name": "Sarakki",
   "lat": 12.90877,
   "lng": 77.5768
- }
+ },
+ // Tech parks and office hubs (added manually; approximate centres).
+ {"name": "Embassy TechVillage", "lat": 12.931, "lng": 77.688, "aliases": ["etv", "embassy tech village"]},
+ {"name": "RMZ Ecoworld", "lat": 12.9264, "lng": 77.6827, "aliases": ["ecoworld", "eco world"]},
+ {"name": "Ecospace Bellandur", "lat": 12.923, "lng": 77.681, "aliases": ["ecospace", "rmz ecospace"]},
+ {"name": "Prestige Tech Park", "lat": 12.9406, "lng": 77.696, "aliases": ["prestige tech"]},
+ {"name": "Embassy Tech Square", "lat": 12.9372, "lng": 77.6975, "aliases": ["tech square", "cessna business park", "cessna"]},
+ {"name": "Bagmane Tech Park", "lat": 12.9818, "lng": 77.6622, "aliases": ["bagmane", "cv raman nagar tech park"]},
+ {"name": "ITPL Whitefield", "lat": 12.9859, "lng": 77.7372, "aliases": ["itpl", "international tech park", "itpb"]},
+ {"name": "EPIP Zone", "lat": 12.98, "lng": 77.716, "aliases": ["epip", "export promotion industrial park"]},
+ {"name": "Brigade Tech Gardens", "lat": 12.968, "lng": 77.7135, "aliases": ["brigade tech"]},
+ {"name": "Embassy Golf Links", "lat": 12.9536, "lng": 77.6421, "aliases": ["egl", "golf links"]},
+ {"name": "Infosys Electronic City", "lat": 12.8451, "lng": 77.6631, "aliases": ["infosys", "infosys campus"]},
+ {"name": "Global Village Tech Park", "lat": 12.9147, "lng": 77.4984, "aliases": ["global village"]},
+ {"name": "Kirloskar Tech Park", "lat": 13.042, "lng": 77.588, "aliases": ["kirloskar"]},
+ {"name": "Embassy Manyata Business Park", "lat": 13.0475, "lng": 77.6215, "aliases": ["manyata embassy"]}
 ];

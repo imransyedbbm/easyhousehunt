@@ -10,6 +10,9 @@ export type Property = {
   preferred_tenants?: string[] | null;
   availability?: "available" | "reserved" | "let_out" | string | null;
   distance_m?: number | null;
+  /** When an area/office is picked: "2.1 km · ~12 min drive to Manyata Tech Park". */
+  distance_label?: string | null;
+  created_at?: string | null;
   property_type?: string | null;
   occupancy?: string | null;
   is_verified?: boolean | null;

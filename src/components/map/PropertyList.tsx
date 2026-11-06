@@ -1,5 +1,5 @@
 import { Property } from "../../types/property";
-import { formatDistance } from "@/lib/geo";
+import { formatDistance, isNewListing } from "@/lib/geo";
 import SaveButton from "@/components/SaveButton";
 import { formatPrice } from "@/lib/price";
 import { availabilityLabel, openRequirement } from "@/lib/requirements";
@@ -57,6 +57,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
               RESERVED · DEAL IN PROGRESS
             </span>
           )}
+          {!p.is_sample && isNewListing(p.created_at) && (
+            <span className="mb-1 mr-1 inline-block rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">NEW</span>
+          )}
           <h3 className="text-white font-semibold text-sm pr-8">{p.title || "Untitled"}</h3>
           <p className="text-green-400 font-bold">{formatPrice(p)}</p>
           {p.property_type === "Commercial" ? (
@@ -70,7 +73,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
           {p.listing_type !== "sale" && p.availability_date && availabilityLabel(p.availability_date) !== "Available now" && (
             <p className="text-teal-300 text-xs mt-1">📅 {availabilityLabel(p.availability_date)}</p>
           )}
-          {p.distance_m != null && (
+          {p.distance_label ? (
+            <p className="text-blue-300 text-xs mt-1">🚗 {p.distance_label}</p>
+          ) : p.distance_m != null && (
             <p className="text-blue-300 text-xs mt-1">📍 {formatDistance(p.distance_m)} away</p>
           )}
           {p.is_verified && (
