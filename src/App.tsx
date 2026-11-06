@@ -1,6 +1,8 @@
 import { linkKey } from "@/lib/share";
 import BrandLogo from "@/components/BrandLogo";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { MessageSquare, LayoutDashboard, ClipboardList, Scale, Lock, Settings, LogOut, Plus } from "lucide-react";
+import ListSkeleton, { LoadError, PanelFallback } from "@/components/common/ListSkeleton";
 import MapView from "./components/map/MapView";
 import UnreadBadge from "@/components/UnreadBadge";
 import { setMessagesOpenHandler } from "@/lib/messageStore";
@@ -11,26 +13,27 @@ import { setPropertySelectHandler, setSearchableProperties, setSearchNote } from
 import PropertyList from "./components/map/PropertyList";
 import PropertyDetail from "./components/map/PropertyDetail";
 import AuthModal from "@/components/ui/AuthModal";
-import ListingWizard from "./modules/chat/ListingWizard";
-import ChatModal from "./modules/chat/ChatModal";
-import Inbox from "./modules/chat/Inbox";
+const ListingWizard = lazy(() => import("./modules/chat/ListingWizard"));
+const ChatModal = lazy(() => import("./modules/chat/ChatModal"));
 import SearchFilters, { Filters } from "./components/SearchFilters";
-import OwnerDashboard from "./pages/OwnerDashboard";
-import TenantDashboard from "./pages/TenantDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+const OwnerDashboard = lazy(() => import("./pages/OwnerDashboard"));
+const TenantDashboard = lazy(() => import("./pages/TenantDashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 import MobileLayout from "./components/MobileLayout";
 import { supabase } from "./integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import RentRight from "./pages/RentRight";
+const RentRight = lazy(() => import("./pages/RentRight"));
 import { OPEN_RENTRIGHT, useAgreedDeals } from "@/lib/deals";
 import { OPEN_REQUIREMENT, openRequirement } from "@/lib/requirements";
-import RequirementModal from "@/components/RequirementModal";
+const RequirementModal = lazy(() => import("@/components/RequirementModal"));
 import { Property } from "./types/property";
+import { toast } from "sonner";
 
 function App() {
   const { user, signOut } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailProperty, setDetailProperty] = useState<Property | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -73,6 +76,7 @@ function App() {
   });
 
   async function fetchProperties() {
+    setLoadFailed(false);
     try {
       const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price";
       const query = (fields: string) => supabase
@@ -90,7 +94,7 @@ function App() {
       if (error) ({ data, error } = await query(FIELDS + ", availability").neq("availability", "let_out"));
       if (error) ({ data, error } = await query(FIELDS));
 
-      if (error) { console.error("Supabase error:", error.message); setProperties([]); return; }
+      if (error) { console.error("Supabase error:", error.message); setProperties([]); setLoadFailed(true); return; }
 
       const mapped: Property[] = (data || []).map(toProperty);
 
@@ -101,6 +105,7 @@ function App() {
     } catch (err) {
       console.error("Fetch error:", err);
       setProperties([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -253,6 +258,8 @@ function App() {
   const sharedProps = {
     properties: filteredProperties,
     loading,
+    loadFailed,
+    onRetry: fetchProperties,
     filters,
     onFiltersChange: setFilters,
     onSelectProperty: (p: Property) => { setSelectedProperty(p); setDetailProperty(p); },
@@ -300,31 +307,31 @@ function App() {
                       </div>
                       <button onClick={() => { setInboxOpen(true); setMenuOpen(false); }}
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                        💬 Messages <UnreadBadge />
+                        <MessageSquare className="h-4 w-4" /> Messages <UnreadBadge />
                       </button>
                       <button onClick={() => { setOwnerDashOpen(true); setMenuOpen(false); }}
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                        📋 My Dashboard
+                        <LayoutDashboard className="h-4 w-4" /> My Dashboard
                       </button>
                       <button onClick={() => { openRequirement(); setMenuOpen(false); }}
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                        📝 My requirements
+                        <ClipboardList className="h-4 w-4" /> My requirements
                       </button>
                       <button onClick={() => { setRentRightDealId(undefined); setRentRightOpen(true); setMenuOpen(false); }}
                         title={rentRightUnlocked ? "Draft your rental agreement" : "Unlocks once you and the other party agree a deal"}
                         className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
-                        ⚖️ RentRight {!rentRightUnlocked && <span className="ml-auto text-xs">🔒</span>}
+                        <Scale className="h-4 w-4" /> RentRight {!rentRightUnlocked && <Lock className="ml-auto h-3.5 w-3.5" />}
                       </button>
                       {effectiveAdmin && (
                         <button onClick={() => { setAdminDashOpen(true); setMenuOpen(false); }}
                           className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                          ⚙️ Admin Panel
+                          <Settings className="h-4 w-4" /> Admin Panel
                         </button>
                       )}
                       <div className="border-t border-gray-700">
                         <button onClick={() => { signOut(); setMenuOpen(false); }}
                           className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
-                          ↪ Sign Out
+                          <LogOut className="h-4 w-4" /> Sign Out
                         </button>
                       </div>
                     </div>
@@ -340,11 +347,11 @@ function App() {
             <div className="flex gap-2">
               <button onClick={handleListProperty}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 py-3 rounded font-semibold text-sm">
-                + List Your Property
+                <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> List Your Property</span>
               </button>
               <button onClick={openRequirement}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 py-3 rounded font-semibold text-sm">
-                📝 Post Requirement
+                <span className="inline-flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> Post Requirement</span>
               </button>
             </div>
             <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 text-[11px] text-gray-500">
@@ -359,7 +366,9 @@ function App() {
           </div>
           <SearchFilters onChange={setFilters} />
           {loading ? (
-            <p className="text-gray-400 px-4">Loading...</p>
+            <ListSkeleton />
+          ) : loadFailed ? (
+            <LoadError onRetry={() => { setLoading(true); fetchProperties(); }} />
           ) : (
             <PropertyList
               properties={filteredProperties}
@@ -378,6 +387,7 @@ function App() {
         </div>
       </div>
 
+      <Suspense fallback={<PanelFallback />}>
       {detailProperty && (
         <PropertyDetail
           property={detailProperty}
@@ -403,7 +413,7 @@ function App() {
           onSuccess={() => {
             setWizardOpen(false);
             fetchProperties();
-            alert("Thanks! Your listing was submitted for review. It will appear on the map once approved. You can track its status under My Listings.");
+            toast.success("Listing submitted for review", { description: "It will appear on the map once approved. Track it under My Listings." });
           }}
         />
       )}
@@ -418,6 +428,7 @@ function App() {
       {adminDashOpen && <AdminDashboard onClose={() => { setAdminDashOpen(false); fetchProperties(); }} />}
       {requirementOpen && <RequirementModal properties={properties} onClose={() => setRequirementOpen(false)} />}
       {rentRightOpen && <RentRight deals={agreedDeals} initialDealId={rentRightDealId} onClose={() => setRentRightOpen(false)} />}
+      </Suspense>
     </>
   );
 }

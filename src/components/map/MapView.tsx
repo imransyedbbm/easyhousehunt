@@ -1,3 +1,4 @@
+import { LocateFixed } from "lucide-react";
 import { sizeLabel } from "@/lib/commercial";
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map, Marker } from "maplibre-gl";
@@ -318,14 +319,14 @@ export default function MapView({
         className={`absolute right-4 z-20 flex max-w-[75%] items-end gap-2 ${
           previewBottom ? "flex-col-reverse" : "top-4 flex-col"
         }`}
-        style={previewBottom ? { bottom: previewBottom } : undefined}
+        style={previewBottom ? { bottom: `calc(${previewBottom} + 56px)`, transition: "bottom 0.3s ease" } : undefined}
       >
         <button
           onClick={() => handleNearMe(false)}
           disabled={locating}
           className="rounded-full bg-gray-900/90 px-4 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10 hover:bg-gray-800 disabled:opacity-60"
         >
-          {locating ? "Locating…" : "📍 Near me"}
+          {locating ? "Locating…" : <span className="inline-flex items-center gap-1.5"><LocateFixed className="h-4 w-4" />Near me</span>}
         </button>
         {nearMsg && (
           <div className="flex items-start gap-2 rounded-xl bg-gray-900/95 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10">
