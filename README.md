@@ -61,9 +61,9 @@ npm run dev            # http://localhost:8080
 Push to `main` → Vercel builds and deploys. After adding listings or areas, Google picks them up from `/sitemap.xml` (submitted in Search Console).
 
 ## Scripts
-`npm run build` · `npm run preview` · `npm run lint` · `npm test` · `npm run health`
+`npm run build` · `npm run preview` · `npm run typecheck` · `npm run lint` · `npm test` · `npm run health`
 
 ## Quality checks
-- **CI** (`.github/workflows/ci.yml`): every PR runs the tests and a production build. Don't merge a red PR.
+- **CI** (`.github/workflows/ci.yml`): every PR runs the type check, lint (errors only), tests and a production build. Don't merge a red PR.
 - **Tests** (`src/test/`): core logic (quality score, distances, share links, freshness) and the server-rendered pages against a mocked database, including a check that client and server build identical listing links.
 - **Daily health check** (`.github/workflows/health-check.yml`, 08:30 IST): home page, sitemap (must contain listings — catches a failing listings query), an area page, a listing page and the manifest. A failure emails the repo owner. Run it any time: `npm run health` or Actions → Live site health check → Run workflow.

@@ -15,6 +15,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Type check
+        run: npm run typecheck
+      - name: Lint (errors fail, warnings don't)
+        run: npm run lint
       - name: Tests
         run: npm test
       - name: Build
