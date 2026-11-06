@@ -3,6 +3,8 @@ import { uploadListingPhotos } from "@/lib/photos";
 import LocationPicker from "@/components/map/LocationPicker";
 import { formatSalePrice } from "@/lib/price";
 import { rentBenchmark, type Benchmark } from "@/lib/insights";
+import { listingQuality } from "@/lib/quality";
+import { Sparkles } from "lucide-react";
 import { SALE_ENABLED } from "@/lib/features";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +35,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [bench, setBench] = useState<Benchmark | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -519,8 +522,32 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 </div>
               )}
               <div>
-                <label className="text-sm text-gray-400">Description</label>
-                <textarea className={inp + " mt-1 h-28 resize-none"} placeholder="Lake view, quiet floor, near metro..." value={form.description} onChange={e => set("description", e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-gray-400">Description</label>
+                  <button
+                    type="button"
+                    disabled={aiBusy}
+                    onClick={async () => {
+                      setAiBusy(true);
+                      const { data, error } = await supabase.functions.invoke("listing-writer", {
+                        body: {
+                          listing_type: listingType, property_type: form.property_type, commercial_type: form.commercial_type,
+                          bhk: form.bhk, occupancy: form.occupancy, area_sqft: form.area_sqft, furnishing: form.furnishing,
+                          address: form.address, amenities, availability_date: availableFrom, preferred_tenants: preferredTenants,
+                          notes: form.description,
+                        },
+                      });
+                      setAiBusy(false);
+                      const msg = (data as any)?.error || (error && "Couldn't write a draft right now. Try again.");
+                      if (msg) { alert(msg); return; }
+                      if ((data as any)?.text) set("description", (data as any).text);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-300 hover:bg-orange-500/25 disabled:opacity-50"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> {aiBusy ? "Writing…" : form.description.trim() ? "Polish with AI" : "Write it for me"}
+                  </button>
+                </div>
+                <textarea className={inp + " mt-1 h-28 resize-none"} placeholder="Lake view, quiet floor, near metro... (or jot a few words and tap 'Write it for me')" value={form.description} onChange={e => set("description", e.target.value)} />
                 {hasPhone(form.description) && (
                   <p className="text-xs text-yellow-300 mt-1">Phone numbers are hidden from the public listing. Tenants will contact you through chat.</p>
                 )}
@@ -546,6 +573,30 @@ export default function ListingWizard({ onClose, onSuccess }: {
           {/* Step 5: Photos */}
           {step === 5 && (
             <div className="space-y-4">
+              {(() => {
+                const q = listingQuality({
+                  media_urls: photos.map(() => "https://photo"), description: form.description, amenities,
+                  area_sqft: parseInt(form.area_sqft) || null, deposit: parseInt(form.deposit) || null, furnishing: form.furnishing,
+                  availability_date: availableFrom || "now", preferred_tenants: preferredTenants.length ? preferredTenants : ["Anyone"],
+                  property_type: form.property_type, listing_type: listingType, latitude: form.latitude ? 1 : null,
+                });
+                return (
+                  <div className="rounded-xl bg-gray-800 p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-300">Listing strength</span>
+                      <b className={q.score >= 80 ? "text-green-400" : q.score >= 55 ? "text-yellow-300" : "text-red-300"}>{q.score}%</b>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-700">
+                      <div className={`h-full ${q.score >= 80 ? "bg-green-500" : q.score >= 55 ? "bg-yellow-400" : "bg-red-400"}`} style={{ width: `${q.score}%` }} />
+                    </div>
+                    {q.tips.length > 0 && (
+                      <ul className="mt-2 space-y-0.5 text-xs text-gray-400">
+                        {q.tips.slice(0, 3).map((t) => <li key={t.key}>+{t.points} · {t.label}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
               <div>
                 <label className="text-sm text-gray-400 block mb-1">Photos <span className="text-gray-500">(optional, max 6)</span></label>
                 <p className="text-xs text-gray-500 mb-3">Good photos get 3x more enquiries. Add photos of living room, bedroom, kitchen, bathroom.</p>

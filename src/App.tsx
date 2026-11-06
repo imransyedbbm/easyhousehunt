@@ -29,6 +29,7 @@ const RequirementModal = lazy(() => import("@/components/RequirementModal"));
 import { Property } from "./types/property";
 import { toast } from "sonner";
 import { logListingView } from "@/lib/insights";
+import { rankScore } from "@/lib/quality";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
 import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 import { LOCALITIES } from "@/data/localities";
@@ -106,7 +107,7 @@ function App() {
           .not("longitude", "is", null);
         // Let-out homes leave the map.
         if (cols.includes("availability")) q = q.neq("availability", "let_out");
-        return q.limit(100);
+        return q.limit(300);
       };
       let { data, error } = await query([...CORE, ...optional]);
       for (let i = 0; error && i < optional.length; i++) {
@@ -246,10 +247,14 @@ function App() {
         ? distanceMeters(userLoc, { lat: p.latitude, lng: p.longitude })
         : null,
   }));
+  // Near me: nearest first. Area picked: nearest to it (already sorted). Otherwise: best listings first
+  // (complete, recently confirmed, verified), with samples last.
   const orderedProperties: Property[] =
     userLoc && !focus
       ? [...withDistance].sort((a, b) => (a.distance_m ?? Infinity) - (b.distance_m ?? Infinity))
-      : withDistance;
+      : focus
+        ? withDistance
+        : [...withDistance].sort((a, b) => Number(!!a.is_sample) - Number(!!b.is_sample) || rankScore(b) - rankScore(a));
 
   // Real listings first; labelled samples after them
   const filteredProperties: Property[] = [
