@@ -3,7 +3,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { MessageSquare, LayoutDashboard, ClipboardList, Scale, Lock, Settings, LogOut, Plus } from "lucide-react";
 import ListSkeleton, { LoadError, PanelFallback } from "@/components/common/ListSkeleton";
-import MapView from "./components/map/MapView";
+import MapView from "./components/map/LazyMapView";
 import UnreadBadge from "@/components/UnreadBadge";
 import { setMessagesOpenHandler } from "@/lib/messageStore";
 import { setSignInRequestHandler } from "@/lib/saved";
@@ -432,7 +432,7 @@ function App() {
                 <span className="inline-flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> Post Requirement</span>
               </button>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 text-[11px] text-gray-500">
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 text-[11px] text-gray-400">
               <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Privacy</a>
               <span>·</span>
               <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Terms</a>

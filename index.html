@@ -42,10 +42,24 @@
       content="Discover rental listings, roommate-friendly homes, and student accommodations across Bengaluru with powerful filters and location-based search."
     />
     <meta name="twitter:image" content="https://easyhousehunt.com/og-image.png" />
+      <!-- Start connecting to the database and map servers while the app downloads. -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
+    <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin />
+    <link rel="dns-prefetch" href="https://tiles.basemaps.cartocdn.com" />
+    <style>
+      /* Instant first paint before the app's JavaScript loads (replaced by React on mount). */
+      html, body { background: #0b0f19; margin: 0; }
+      .boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+              font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #e5e7eb; }
+      .boot b { font-size: 22px; letter-spacing: -0.01em; } .boot b span { color: #fb923c; }
+      .boot p { margin: 0; font-size: 13px; color: #9ca3af; }
+      .boot i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cf460b; border-top-color: transparent; animation: s .8s linear infinite; }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot"><b>EasyHouse<span>Hunt</span></b><i></i><p>Zero-brokerage homes in Bengaluru</p></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

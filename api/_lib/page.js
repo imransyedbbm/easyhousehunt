@@ -67,7 +67,7 @@ const CSS = `*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-
 a{color:inherit}header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:rgba(11,15,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937}
 .brand{font-weight:800;font-size:18px;text-decoration:none;color:#fff}.brand span{color:#f97316}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px;border:0;cursor:pointer}
-.btn-o{background:#f97316;color:#fff}.btn-o:hover{background:#ea580c}.btn-g{background:#16a34a;color:#fff}.btn-g:hover{background:#15803d}.btn-d{background:#1f2937;color:#fff;border:1px solid #374151}
+.btn-o{background:#cf460b;color:#fff}.btn-o:hover{background:#b33c09}.btn-g{background:#16a34a;color:#fff}.btn-g:hover{background:#15803d}.btn-d{background:#1f2937;color:#fff;border:1px solid #374151}
 main{max-width:1040px;margin:0 auto;padding:20px 16px 110px}
 .gal{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:8px;height:420px;border-radius:16px;overflow:hidden}
 .gal img{width:100%;height:100%;object-fit:cover;display:block;background:#111827}.gal img:first-child{grid-row:1/3}
@@ -76,7 +76,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 16px 110px}
 .cols{display:grid;grid-template-columns:1fr 320px;gap:28px;margin-top:24px}
 h1{font-size:28px;line-height:1.2;margin:0 0 6px;color:#fff}h2{font-size:18px;color:#fff;margin:28px 0 10px}
 .price{font-size:30px;font-weight:800;color:#4ade80}.muted{color:#9ca3af}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{background:#1f2937;border-radius:999px;padding:6px 12px;font-size:14px}.chip.o{background:rgba(249,115,22,.15);color:#fdba74}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{background:#1f2937;border-radius:999px;padding:6px 12px;font-size:14px}.chip.o{background:rgba(207,70,11,.2);color:#fdba74}
 .card{background:#111827;border:1px solid #1f2937;border-radius:16px;padding:18px;position:sticky;top:80px}
 .card .btn{width:100%;margin-top:10px}.note{font-size:12px;color:#9ca3af;margin-top:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:16px}
