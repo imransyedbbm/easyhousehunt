@@ -72,6 +72,9 @@ serve(async (req) => {
     const photo = (p.media_urls || []).find((u: string) => /^https?:\/\//.test(u));
     const size = p.property_type === "Commercial" ? (p.commercial_type || "Commercial space")
       : p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK ${p.property_type || ""}`.trim() : p.property_type || "Home";
+    const slug = (x: string) => x.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "");
+    const sizeSlug = p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
+    const listingLink = p.share_code ? `${SITE_URL}/l/${slug(`${sizeSlug} ${p.title || "home"}`)}-${p.share_code}` : `${SITE_URL}/?p=${p.id}`;
     let sent = 0, whatsapp = 0;
 
     for (const m of matches ?? []) {
@@ -90,7 +93,7 @@ serve(async (req) => {
   <p style="margin:4px 0;color:#C2410C;font-weight:bold;font-size:18px">${inr(p.rent)}/month</p>
   <p style="margin:0 0 16px;color:#0F766E;font-size:13px;font-weight:bold">${avail}</p>
   <p style="margin:0 0 16px;color:#64748b;font-size:13px">${esc(p.address || "")}</p>
-  <a href="${SITE_URL}/" style="display:inline-block;background:#C2410C;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:bold">View on EasyHouseHunt</a>
+  <a href="${listingLink}" style="display:inline-block;background:#C2410C;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:bold">See this home</a>
   <p style="color:#94a3b8;font-size:12px;margin-top:24px">You're getting this because you posted a requirement. Pause or close it any time from "My requirements".<br>EasyHouseHunt · easyhousehunt.com</p>
 </div>`;
       const res = await fetch("https://api.resend.com/emails", {
@@ -117,7 +120,7 @@ serve(async (req) => {
                 { type: "text", text: m.name || "there" },
                 { type: "text", text: `${p.title || size}${drop ? " (price reduced)" : ""}` },
                 { type: "text", text: `${inr(p.rent)}/month · ${avail}` },
-                { type: "text", text: `${SITE_URL}/` },
+                { type: "text", text: listingLink },
               ] }],
             },
           }),
