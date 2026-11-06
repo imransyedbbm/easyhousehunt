@@ -3,6 +3,7 @@ import EditListingModal from "@/components/EditListingModal";
 import ChatModal from "@/modules/chat/ChatModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { NotifyBanner } from "@/components/NotifyToggle";
 import { useMessageVersion, useUnread } from "@/lib/messageStore";
 import { selectProperty } from "@/lib/searchStore";
 import { useSavedIds } from "@/lib/saved";
@@ -246,6 +247,7 @@ export default function OwnerDashboard({
         <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">✕</button>
       </div>
 
+      <NotifyBanner />
       {/* Tabs */}
       <div className="flex border-b border-gray-800">
         {TABS.map((t) => (

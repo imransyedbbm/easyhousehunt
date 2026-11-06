@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { NotifyBanner } from "@/components/NotifyToggle";
 import CompareHomes from "@/components/CompareHomes";
 import VisitsPanel from "@/components/VisitsPanel";
 import { formatPrice } from "@/lib/price";
@@ -69,6 +70,7 @@ export default function TenantDashboard({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">✕</button>
       </div>
 
+      <NotifyBanner />
       <div className="flex border-b border-gray-800">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
