@@ -2,12 +2,14 @@ import { Download, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useInstallApp } from "@/lib/install";
 import { inviteOwnerUrl } from "@/lib/invite";
+import { NotifyMenuItem } from "@/components/NotifyToggle";
 
 /** "Install app" + "Invite an owner" rows for the account menus. */
 export default function GrowthMenuItems({ onDone }: { onDone: () => void }) {
   const { canInstall, install } = useInstallApp();
   return (
     <div className="border-t border-gray-700">
+      <NotifyMenuItem onDone={onDone} />
       <a href={inviteOwnerUrl()} target="_blank" rel="noopener noreferrer" onClick={onDone}
         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
         <UserPlus className="h-4 w-4 text-green-400" /> Invite an owner · free listing

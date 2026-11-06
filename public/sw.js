@@ -2,7 +2,7 @@
 // - Hashed build assets (/assets/*): cache-first (they never change).
 // - Page loads: network-first, falling back to the cached app shell when offline.
 // - Everything else (API, Supabase, map tiles, other origins): untouched.
-const VERSION = "ehh-v1";
+const VERSION = "ehh-v2";
 const SHELL = ["/", "/site.webmanifest", "/favicon.svg", "/android-chrome-192x192.png"];
 
 self.addEventListener("install", (e) => {
@@ -42,4 +42,28 @@ self.addEventListener("fetch", (e) => {
       }).catch(() => caches.match("/").then((hit) => hit || Response.error())),
     );
   }
+});
+
+// ── Push notifications ──
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { title: "EasyHouseHunt", body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || "EasyHouseHunt", {
+    body: d.body || "",
+    icon: "/android-chrome-192x192.png",
+    badge: "/favicon-32x32.png",
+    tag: d.tag,
+    renotify: !!d.tag,
+    data: { url: d.url || "/" },
+  }));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+    const open = wins.find((w) => new URL(w.url).origin === self.location.origin);
+    if (open) { open.navigate(url); return open.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

@@ -64,6 +64,7 @@ function App() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [chatProperty, setChatProperty] = useState<Property | null>(null);
   const [inboxOpen, setInboxOpen] = useState(false);
+  const [inboxTab, setInboxTab] = useState<"messages" | "visits">("messages");
   const [menuOpen, setMenuOpen] = useState(false);
   const [ownerDashOpen, setOwnerDashOpen] = useState(false);
   const [tenantDashOpen, setTenantDashOpen] = useState(false);
@@ -292,7 +293,13 @@ function App() {
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    if (!["area", "list", "requirement"].some((k) => q.has(k))) return;
+    // From a push notification: /?open=messages | /?open=visits
+    const open = q.get("open");
+    if (open === "messages" || open === "visits") { setInboxTab(open); setInboxOpen(true); q.delete("open"); }
+    if (!["area", "list", "requirement"].some((k) => q.has(k))) {
+      if (open) window.history.replaceState(null, "", window.location.pathname + (q.toString() ? `?${q}` : ""));
+      return;
+    }
     if (q.has("list")) handleListProperty();
     if (q.has("requirement")) openRequirement();
     ["area", "list", "requirement"].forEach((k) => q.delete(k));
@@ -472,7 +479,7 @@ function App() {
         />
       )}
 
-      {inboxOpen && <OwnerDashboard initialTab="messages" onClose={() => setInboxOpen(false)} />}
+      {inboxOpen && <OwnerDashboard initialTab={inboxTab} onClose={() => { setInboxOpen(false); setInboxTab("messages"); }} />}
 
       {wizardOpen && (
         <ListingWizard
