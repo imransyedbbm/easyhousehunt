@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CompareHomes from "@/components/CompareHomes";
+import VisitsPanel from "@/components/VisitsPanel";
 import { formatPrice } from "@/lib/price";
 import { httpPhotos } from "@/lib/photos";
 import { toast } from "sonner";
@@ -12,10 +13,11 @@ export default function TenantDashboard({ onClose }: { onClose: () => void }) {
   const [saved, setSaved] = useState<any[]>([]);
   const [enquiries, setEnquiries] = useState<any[]>([]);
   const [recent, setRecent] = useState<any[]>([]);
-  const [tab, setTab] = useState<"saved" | "enquiries" | "recent">("saved");
+  const [tab, setTab] = useState<"saved" | "visits" | "enquiries" | "recent">("saved");
   const [loading, setLoading] = useState(true);
   const [picked, setPicked] = useState<string[]>([]);
   const [comparing, setComparing] = useState(false);
+  const [visitCount, setVisitCount] = useState(0);
   const togglePick = (id: string) =>
     setPicked((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
@@ -53,6 +55,7 @@ export default function TenantDashboard({ onClose }: { onClose: () => void }) {
 
   const TABS = [
     { key: "saved", label: "Saved", count: saved.length },
+    { key: "visits", label: "Visits", count: visitCount },
     { key: "enquiries", label: "Enquiries", count: enquiries.length },
   ];
 
@@ -141,6 +144,8 @@ export default function TenantDashboard({ onClose }: { onClose: () => void }) {
                 </>
               )
             )}
+
+            {tab === "visits" && user && <VisitsPanel userId={user.id} onCount={setVisitCount} />}
 
             {tab === "enquiries" && (
               enquiries.length === 0 ? (
