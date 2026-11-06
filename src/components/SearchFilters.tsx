@@ -44,10 +44,13 @@ const DEFAULT_FILTERS: Filters = {
 
 export default function SearchFilters({
   onChange,
+  initial,
 }: {
   onChange: (f: Filters) => void;
+  /** Current filters from the parent, so a remount (mobile sheet) or a deep link keeps them. */
+  initial?: Partial<Filters>;
 }) {
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<Filters>({ ...DEFAULT_FILTERS, ...initial });
   const [expanded, setExpanded] = useState(false);
 
   // Suggestions: apartment names from live listings + a bundled list of Bengaluru areas

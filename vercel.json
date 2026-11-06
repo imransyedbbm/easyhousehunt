@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/l/:id", "destination": "/api/listing?id=:id" }
+    { "source": "/l/:id", "destination": "/api/listing?id=:id" },
+    { "source": "/rent", "destination": "/api/rent" },
+    { "source": "/rent/:area", "destination": "/api/rent?area=:area" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
   ]
 }

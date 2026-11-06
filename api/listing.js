@@ -1,88 +1,126 @@
-// Shareable listing links: https://easyhousehunt.com/l/2bhk-karle-vario-homes-k7x2qm
+// Public listing page: https://easyhousehunt.com/l/2bhk-karle-vario-homes-k7x2qm
 // (readable slug + 6-char share code; the database ID is never exposed). Old /l/<uuid> links still work.
-// Serves a tiny page with the listing's title, price and photo as link-preview tags
-// (WhatsApp, Facebook, LinkedIn, X), then forwards people to the app with that listing open.
+// Server-rendered so Google and link previews (WhatsApp, Facebook, LinkedIn, X) see the full listing.
+// "Contact owner" opens the app with the listing selected, where sign-in and chat live.
+import { SITE, esc, sb, sizeLabel, priceLabel, listingPath, photos, availability, distanceKm, layout, tile, inr } from "./_lib/page.js";
+import { LOCALITIES } from "./_lib/localities.js";
 
-const SITE = "https://easyhousehunt.com";
-
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const inr = (n) => "₹" + Number(n).toLocaleString("en-IN");
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CODE = /^[a-z2-9]{6}$/;
 
-function availability(date) {
-  if (!date) return "Available now";
-  const d = new Date(date + "T00:00:00");
-  if (d <= new Date()) return "Available now";
-  return "Available from " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+function nearestLocality(p) {
+  if (p.latitude == null || p.longitude == null) return null;
+  let best = null, bd = Infinity;
+  for (const l of LOCALITIES) {
+    const d = distanceKm({ lat: p.latitude, lng: p.longitude }, l);
+    if (d < bd) { bd = d; best = l; }
+  }
+  return bd <= 4 ? best : null;
 }
 
 export default async function handler(req, res) {
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const seg = String(req.query.id || "").trim();
   const legacyId = UUID.test(seg) ? seg : null;
   const code = legacyId ? null : (seg.split("-").pop() || "");
   const valid = !!legacyId || CODE.test(code);
   const filter = legacyId ? `id=eq.${legacyId}` : `share_code=eq.${code}`;
+  const rows = valid ? await sb(`properties?${filter}&status=eq.approved&select=*`) : null;
+  const p = rows?.[0] || null;
 
-  let p = null;
-  if (valid && SUPABASE_URL && SUPABASE_KEY) {
-    try {
-      const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/properties?${filter}&status=eq.approved&select=*`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
-      );
-      if (r.ok) p = (await r.json())[0] || null;
-    } catch { /* fall through to a generic preview */ }
-  }
-
-  let title = "EasyHouseHunt · Rental homes in Bengaluru";
-  let desc = "Find your next home in Bengaluru, the easy way. Zero brokerage, direct to owners.";
-  let image = `${SITE}/og-image.png`;
-
-  if (p) {
-    const size = p.property_type === "Commercial" ? (p.commercial_type || "Commercial space")
-      : p.property_type === "PG" ? "PG" : p.bhk ? `${p.bhk} BHK` : p.property_type || "Home";
-    const price = p.listing_type === "sale" && p.sale_price ? inr(p.sale_price) : p.rent ? `${inr(p.rent)}/month` : "";
-    title = [`${size} · ${p.title || "Home for rent"}`, price].filter(Boolean).join(" · ");
-    const bits = [
-      p.furnishing && `${p.furnishing === "Semi" ? "Semi-furnished" : p.furnishing}`,
-      p.area_sqft && `${p.area_sqft} sq ft`,
-      p.listing_type !== "sale" && availability(p.availability_date),
-      p.availability === "reserved" && "Reserved",
-    ].filter(Boolean).join(" · ");
-    const text = String(p.description || "").replace(/\s+/g, " ").trim();
-    desc = [bits, text.length > 160 ? text.slice(0, 157) + "…" : text].filter(Boolean).join(". ");
-    const photo = (p.media_urls || []).find((u) => /^https:\/\//i.test(u));
-    if (photo) image = photo;
-  }
-
-  // Always point people at the short link and open the app by code, never by database ID.
-  const slug = p ? [p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "", p.title || "home"].join(" ")
-    .toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "") : "";
-  const url = p?.share_code ? `${SITE}/l/${slug}-${p.share_code}` : `${SITE}/`;
-  const appUrl = p?.share_code ? `${SITE}/?p=${p.share_code}` : legacyId && p ? `${SITE}/?p=${legacyId}` : `${SITE}/`;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
-  res.status(p || !valid ? 200 : 404).send(`<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="EasyHouseHunt">
-<meta property="og:url" content="${esc(url)}">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="${esc(image)}">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${esc(title)}">
-<meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${esc(image)}">
-<meta http-equiv="refresh" content="0;url=${esc(appUrl)}">
-<script>location.replace(${JSON.stringify(appUrl)})</script>
-<style>body{font-family:system-ui,sans-serif;background:#0F172A;color:#F8FAFC;display:grid;place-items:center;height:100vh;margin:0}a{color:#FB923C}</style>
-</head><body><p>Opening <a href="${esc(appUrl)}">${esc(p?.title || "EasyHouseHunt")}</a>…</p></body></html>`);
+
+  if (!p) {
+    res.status(404).send(layout({
+      title: "Listing not found · EasyHouseHunt", desc: "This listing has been let out or removed.",
+      canonical: SITE + "/", status: 404,
+      body: `<main style="text-align:center;padding-top:80px"><h1>This home is no longer listed</h1><p class="muted">It may have been let out. Plenty more on the map.</p><p><a class="btn btn-o" href="/">Browse homes on the map</a></p></main>`,
+    }));
+    return;
+  }
+
+  const canonical = SITE + listingPath(p);
+  const appUrl = `${SITE}/?p=${p.share_code || p.id}`;
+  const size = sizeLabel(p), price = priceLabel(p), pics = photos(p);
+  const sale = p.listing_type === "sale";
+  const area = nearestLocality(p);
+  const furnishing = p.furnishing ? (p.furnishing === "Semi" ? "Semi-furnished" : p.furnishing) : null;
+  const text = String(p.description || "").replace(/\s+/g, " ").trim();
+  const title = `${size} ${sale ? "for sale" : "for rent"}${area ? ` in ${area.name}` : ""} · ${p.title || "Home"} · ${price}`;
+  const desc = [[furnishing, p.area_sqft && `${p.area_sqft} sq ft`, !sale && availability(p)].filter(Boolean).join(" · "),
+    text.length > 150 ? text.slice(0, 147) + "…" : text, "Zero brokerage, direct from owner."].filter(Boolean).join(". ");
+  const wa = `https://wa.me/?text=${encodeURIComponent(`${size} · ${p.title} · ${price}\n${canonical}`)}`;
+
+  const chips = [
+    `<span class="chip o">${esc(size)}</span>`,
+    furnishing && `<span class="chip">${esc(furnishing)}</span>`,
+    p.area_sqft && `<span class="chip">${esc(p.area_sqft)} sq ft</span>`,
+    !sale && p.deposit && `<span class="chip">Deposit ${esc(inr(p.deposit))}</span>`,
+    !sale && `<span class="chip">${esc(availability(p))}</span>`,
+    !sale && p.preferred_tenants?.length && `<span class="chip">Prefers ${esc(p.preferred_tenants.join(", "))}</span>`,
+  ].filter(Boolean).join("");
+
+  const gal = pics.length
+    ? `<div class="gal ${pics.length === 1 ? "one" : pics.length === 2 ? "two" : ""}">${pics.slice(0, 12).map((u, i) => `<img src="${esc(u)}" alt="${esc(p.title)} photo ${i + 1}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'}>`).join("")}</div>`
+    : `<div class="nophoto">Photos on request · ask the owner</div>`;
+
+  // Similar homes nearby (same listing type), for visitors and internal linking.
+  let similar = [];
+  if (p.latitude != null && p.longitude != null) {
+    const d = 0.03;
+    const near = await sb(`properties?status=eq.approved&is_sample=eq.false&listing_type=eq.${sale ? "sale" : "rent"}&id=neq.${p.id}` +
+      `&latitude=gte.${p.latitude - d}&latitude=lte.${p.latitude + d}&longitude=gte.${p.longitude - d}&longitude=lte.${p.longitude + d}` +
+      `&select=id,title,bhk,rent,sale_price,listing_type,property_type,commercial_type,occupancy,address,media_urls,share_code&limit=6`);
+    similar = (near || []).filter((x) => x.availability !== "let_out");
+  }
+
+  const jsonld = {
+    "@context": "https://schema.org", "@type": "RealEstateListing",
+    name: p.title, description: text || desc, url: canonical, image: pics.slice(0, 5),
+    datePosted: p.created_at || undefined,
+    offers: { "@type": "Offer", priceCurrency: "INR", price: sale ? p.sale_price || undefined : p.rent || undefined,
+      ...(sale ? {} : { priceSpecification: { "@type": "UnitPriceSpecification", price: p.rent || undefined, priceCurrency: "INR", unitCode: "MON" } }),
+      availability: p.availability === "reserved" ? "https://schema.org/LimitedAvailability" : "https://schema.org/InStock" },
+    about: {
+      "@type": p.property_type === "Commercial" ? "Place" : "Apartment",
+      ...(p.bhk ? { numberOfRooms: p.bhk } : {}),
+      ...(p.area_sqft ? { floorSize: { "@type": "QuantitativeValue", value: p.area_sqft, unitCode: "FTK" } } : {}),
+      address: { "@type": "PostalAddress", streetAddress: p.address || undefined, addressLocality: "Bengaluru", addressRegion: "Karnataka", addressCountry: "IN" },
+      ...(p.latitude != null ? { geo: { "@type": "GeoCoordinates", latitude: p.latitude, longitude: p.longitude } } : {}),
+    },
+  };
+  const crumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Bengaluru", item: SITE + "/" },
+    ...(area ? [{ "@type": "ListItem", position: 2, name: `Rent in ${area.name}`, item: `${SITE}/rent/${area.slug}` }] : []),
+    { "@type": "ListItem", position: area ? 3 : 2, name: p.title, item: canonical },
+  ] };
+
+  const body = `<main>
+<p class="muted" style="font-size:13px;margin:0 0 12px"><a href="/">Bengaluru</a>${area ? ` › <a href="/rent/${esc(area.slug)}">Rent in ${esc(area.name)}</a>` : ""}</p>
+${p.is_sample ? `<div class="warn"><b>Sample listing</b> · for demonstration only, not a real home or price.</div><br>` : ""}
+${gal}
+${pics.length > 1 ? `<p class="muted" style="font-size:13px;margin:6px 0 0">${pics.length} photos${pics.length > 3 ? " · swipe on phone, or open on the map to see all" : ""}</p>` : ""}
+<div class="cols"><div>
+<h1>${esc(p.title || "Home")}</h1>
+<div class="price">${esc(price)}</div>
+${p.address ? `<p class="muted">${esc(p.address)}</p>` : ""}
+<div class="chips">${chips}</div>
+${text ? `<h2>About this ${sale ? "property" : "home"}</h2><p style="white-space:pre-line">${esc(p.description)}</p>` : ""}
+${p.amenities?.length ? `<h2>Amenities</h2><div class="chips">${p.amenities.map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div>` : ""}
+${sale ? `<div class="warn">Before paying any money, verify title deeds, khata, encumbrance certificate and RERA registration, preferably with a lawyer. EasyHouseHunt does not verify ownership.</div>` : ""}
+</div>
+<aside><div class="card">
+<div class="price" style="font-size:24px">${esc(price)}</div>
+<div class="muted" style="font-size:14px">${esc(size)}${furnishing ? " · " + esc(furnishing) : ""}</div>
+<a class="btn btn-o" href="${esc(appUrl)}">${sale ? "Contact the seller" : "Contact the owner"}</a>
+<a class="btn btn-g" href="${esc(wa)}" target="_blank" rel="noopener">Share on WhatsApp</a>
+<a class="btn btn-d" href="${esc(appUrl)}">See it on the map</a>
+<p class="note">Zero brokerage. You chat with the owner directly on EasyHouseHunt.</p>
+</div></aside></div>
+${similar.length ? `<h2>More homes nearby</h2><div class="grid">${similar.map(tile).join("")}</div>` : ""}
+${area ? `<p style="margin-top:28px"><a class="btn btn-d" href="/rent/${esc(area.slug)}">All homes for rent in ${esc(area.name)} →</a></p>` : ""}
+</main>
+<div class="bar"><a class="btn btn-g" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn btn-o" href="${esc(appUrl)}">Contact owner</a></div>`;
+
+  res.status(200).send(layout({ title, desc, canonical, image: pics[0], jsonld: [jsonld, crumbs], body }));
 }

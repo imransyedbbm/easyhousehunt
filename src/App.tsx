@@ -28,6 +28,16 @@ import { OPEN_REQUIREMENT, openRequirement } from "@/lib/requirements";
 const RequirementModal = lazy(() => import("@/components/RequirementModal"));
 import { Property } from "./types/property";
 import { toast } from "sonner";
+import Welcome, { shouldShowWelcome } from "@/components/Welcome";
+import { LOCALITIES } from "@/data/localities";
+
+const areaSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+// Deep links from the public pages: /?area=koramangala, /?list=1, /?requirement=1
+const initialParams = new URLSearchParams(window.location.search);
+const initialArea = (() => {
+  const l = LOCALITIES.find((x) => areaSlug(x.name) === (initialParams.get("area") || "").toLowerCase());
+  return l ? { name: l.name, lat: l.lat, lng: l.lng } : null;
+})();
 
 function App() {
   const { user, signOut } = useAuth();
@@ -72,8 +82,10 @@ function App() {
   }, []);
   const [isAdmin, setIsAdmin] = useState(false);
   const [filters, setFilters] = useState<Filters>({
-    bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", propertyType: "All", occupancy: []
+    bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", propertyType: "All", occupancy: [], area: initialArea,
   });
+  const [welcomeOpen, setWelcomeOpen] = useState(shouldShowWelcome);
+  const [filtersKey, setFiltersKey] = useState(0);
 
   async function fetchProperties() {
     setLoadFailed(false);
@@ -250,6 +262,17 @@ function App() {
     else { setAuthIntent("owner"); setAuthModalOpen(true); }
   };
 
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (!["area", "list", "requirement"].some((k) => q.has(k))) return;
+    if (q.has("list")) handleListProperty();
+    if (q.has("requirement")) openRequirement();
+    ["area", "list", "requirement"].forEach((k) => q.delete(k));
+    const rest = q.toString();
+    window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleConnectWithOwner = () => {
     if (user) { setChatProperty(detailProperty); setDetailProperty(null); }
     else { setAuthIntent("tenant"); setAuthModalOpen(true); }
@@ -364,7 +387,7 @@ function App() {
               <a href="/contact.html" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">Contact</a>
             </div>
           </div>
-          <SearchFilters onChange={setFilters} />
+          <SearchFilters key={filtersKey} onChange={setFilters} initial={filters} />
           {loading ? (
             <ListSkeleton />
           ) : loadFailed ? (
@@ -415,6 +438,19 @@ function App() {
             fetchProperties();
             toast.success("Listing submitted for review", { description: "It will appear on the map once approved. Track it under My Listings." });
           }}
+        />
+      )}
+
+      {welcomeOpen && (
+        <Welcome
+          listingCount={properties.filter((p) => !p.is_sample).length}
+          onPickArea={(l) => {
+            setFilters((f) => ({ ...f, search: "", area: { name: l.name, lat: l.lat, lng: l.lng } }));
+            setFiltersKey((k) => k + 1);
+            setWelcomeOpen(false);
+          }}
+          onBrowse={() => setWelcomeOpen(false)}
+          onListProperty={() => { setWelcomeOpen(false); handleListProperty(); }}
         />
       )}
 
