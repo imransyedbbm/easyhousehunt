@@ -17,7 +17,7 @@ CREATE POLICY "Push: own rows" ON public.push_subscriptions
   FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
 -- On every new message, ask the send-push function to notify the receiver.
--- The URL and secret below must match your project and the CRON_SECRET edge-function secret.
+-- Before running: replace <CRON_SECRET> with your CRON_SECRET edge-function secret (and check the project URL).
 CREATE OR REPLACE FUNCTION public.push_on_message()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
@@ -25,7 +25,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM push_subscriptions WHERE user_id = NEW.receiver_id) THEN RETURN NEW; END IF;
   PERFORM net.http_post(
     url := 'https://skvlnxlbdyjxroxwqmeq.supabase.co/functions/v1/send-push',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'ehh_cron_7Kq9vR2mXp4LwT8nZb3YcF6hJd1sGa5U'),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', '<CRON_SECRET>'),
     body := jsonb_build_object('message_id', NEW.id)
   );
   RETURN NEW;
