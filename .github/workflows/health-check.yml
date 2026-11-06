@@ -1,0 +1,16 @@
+# Checks easyhousehunt.com every day at 08:30 IST (and on demand). A failure emails the repo owner.
+name: Live site health check
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/health-check.mjs https://easyhousehunt.com
