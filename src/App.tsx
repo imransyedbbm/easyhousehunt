@@ -91,7 +91,7 @@ function App() {
   async function fetchProperties() {
     setLoadFailed(false);
     try {
-      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price";
+      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price, is_verified";
       const query = (fields: string) => supabase
         .from("properties")
         .select(fields)
@@ -160,6 +160,7 @@ function App() {
         occupancy: p.occupancy ?? null,
         commercial_type: p.commercial_type ?? null,
         is_sample: p.is_sample ?? false,
+        is_verified: p.is_verified ?? false,
         share_code: p.share_code ?? null,
         availability: p.availability ?? "available",
         availability_date: p.availability_date ?? null,
@@ -423,6 +424,7 @@ function App() {
           property={detailProperty}
           onClose={() => setDetailProperty(null)}
           onConnectClick={handleConnectWithOwner}
+          onRequireLogin={() => { setAuthIntent("tenant"); setAuthModalOpen(true); }}
         />
       )}
 

@@ -10,15 +10,19 @@ import SaveButton from "@/components/SaveButton";
 import { formatPrice, pricePerSqft } from "@/lib/price";
 import { httpPhotos } from "@/lib/photos";
 import { addRecent } from "@/lib/recentlyViewed";
+import ReportListing from "@/components/ReportListing";
+import { BadgeCheck } from "lucide-react";
 
 export default function PropertyDetail({
   property,
   onClose,
   onConnectClick,
+  onRequireLogin,
 }: {
   property: Property;
   onClose: () => void;
   onConnectClick: () => void;
+  onRequireLogin?: () => void;
 }) {
   const { user } = useAuth();
   useEffect(() => {
@@ -159,6 +163,11 @@ export default function PropertyDetail({
               📅 {availabilityLabel(property.availability_date)}
             </span>
           )}
+          {property.is_verified && (
+            <span className="inline-flex items-center gap-1 bg-blue-900/60 text-blue-200 px-3 py-1 rounded-full text-sm" title="EasyHouseHunt has verified this owner">
+              <BadgeCheck className="h-4 w-4" /> Verified owner
+            </span>
+          )}
           {freshnessLabel(property.confirmed_at) && (
             <span className="bg-green-900/50 text-green-300 px-3 py-1 rounded-full text-sm">
               ✓ {freshnessLabel(property.confirmed_at)}
@@ -214,6 +223,11 @@ export default function PropertyDetail({
         >
           {reservedForOthers ? "Reserved · not taking new enquiries" : property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? "📞 Contact the seller" : "📞 Connect with Owner") : "🔐 Login to Connect"}
         </button>
+        {!property.is_sample && property.landlord_id !== user?.id && (
+          <div className="text-center">
+            <ReportListing propertyId={property.id} signedIn={!!user} onRequireLogin={onRequireLogin ?? onConnectClick} />
+          </div>
+        )}
       </div>
     </div>
   );

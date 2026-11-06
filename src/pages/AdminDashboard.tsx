@@ -3,8 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import EditListingModal from "@/components/EditListingModal";
 import { formatPrice } from "@/lib/price";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { BadgeCheck, TrendingUp, TrendingDown } from "lucide-react";
 
-type Tab = "pending" | "listings" | "messages" | "users" | "demand";
+type Tab = "pending" | "reports" | "listings" | "messages" | "users" | "demand";
+
+const REPORT_LABEL: Record<string, string> = {
+  let_out: "Already let out / sold", wrong_details: "Wrong details", broker: "Broker posing as owner", fake: "Fake / scam", other: "Other",
+};
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-yellow-900 text-yellow-300",
@@ -27,6 +33,8 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [loadError, setLoadError] = useState("");
   const [editListing, setEditListing] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [reports, setReports] = useState<any[]>([]);
+  const [weekly, setWeekly] = useState<{ metric: string; this_week: number; last_week: number }[]>([]);
   const [market, setMarket] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -38,7 +46,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
     const { data: props, error: pErr } = await supabase
       .from("properties")
-      .select("id, title, rent, bhk, address, created_at, landlord_id, latitude, longitude, market, status, rejection_reason, reviewed_at, property_type, furnishing, deposit, description, media_urls, listing_type, sale_price")
+      .select("id, title, rent, bhk, address, created_at, landlord_id, latitude, longitude, market, status, rejection_reason, reviewed_at, property_type, furnishing, deposit, description, media_urls, listing_type, sale_price, is_verified")
       .order("created_at", { ascending: false })
       .limit(300);
     if (pErr) setLoadError(pErr.message);
@@ -64,6 +72,16 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
     const { data: contacts } = await (supabase as any).from("listing_owner_contacts").select("*");
     setOwnerContacts(Object.fromEntries((contacts || []).map((c: any) => [c.property_id, c])));
+
+    const { data: reps } = await (supabase as any)
+      .from("listing_reports")
+      .select("id, property_id, reason, details, status, created_at, reporter_id")
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    setReports(reps || []);
+    const { data: wk } = await (supabase as any).rpc("admin_weekly_stats");
+    setWeekly(wk || []);
 
     setRequirements(reqs || []);
     setListings(props || []);
@@ -143,6 +161,22 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     updateStatus(l, "rejected", reason.trim());
   };
 
+  const toggleVerified = async (l: any) => {
+    const next = !l.is_verified;
+    const { data, error } = await (supabase as any).from("properties").update({ is_verified: next }).eq("id", l.id).select("id");
+    if (error || !data?.length) { toast.error("Couldn't update: " + (error?.message ?? "no permission")); return; }
+    setListings((prev) => prev.map((x) => (x.id === l.id ? { ...x, is_verified: next } : x)));
+    toast.success(next ? "Marked as verified owner" : "Verified badge removed");
+  };
+
+  const closeReports = async (propertyId: string, status: "resolved" | "dismissed") => {
+    const { error } = await (supabase as any).from("listing_reports")
+      .update({ status, resolved_at: new Date().toISOString() })
+      .eq("property_id", propertyId).eq("status", "open");
+    if (error) { toast.error(error.message); return; }
+    setReports((prev) => prev.filter((r) => r.property_id !== propertyId));
+  };
+
   const deleteListing = async (id: string) => {
     if (!confirm("Delete this listing permanently?")) return;
     const { error } = await supabase.from("properties").delete().eq("id", id);
@@ -157,6 +191,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
   const TABS = [
     { key: "pending", label: "Pending", count: stats.pending },
+    { key: "reports", label: "Reports", count: reports.length },
     { key: "listings", label: "Listings", count: listings.length },
     { key: "messages", label: "Messages", count: stats.messages },
     { key: "users", label: "Users", count: stats.users },
@@ -256,6 +291,13 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => toggleVerified(l)}
+            title="Only after you've checked the owner (call / ID / property papers)"
+            className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold ${l.is_verified ? "bg-blue-700 hover:bg-blue-600" : "bg-gray-700 hover:bg-gray-600"}`}
+          >
+            <BadgeCheck className="h-4 w-4" /> {l.is_verified ? "Verified" : "Verify"}
+          </button>
           {l.status !== "approved" && (
             <button
               disabled={busy}
@@ -304,6 +346,25 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </div>
+
+      {weekly.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto border-b border-gray-800 bg-gray-950 px-3 py-2">
+          <span className="self-center whitespace-nowrap text-[11px] uppercase tracking-wide text-gray-500">Last 7 days</span>
+          {weekly.map((w) => {
+            const up = Number(w.this_week) >= Number(w.last_week);
+            return (
+              <div key={w.metric} className="whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-xs" title={`Previous 7 days: ${w.last_week}`}>
+                <span className="text-gray-400">{w.metric}</span>{" "}
+                <b className="text-white">{w.this_week}</b>{" "}
+                <span className={`inline-flex items-center ${up ? "text-green-400" : "text-red-400"}`}>
+                  {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  <span className="ml-0.5">{w.last_week}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-gray-800">
@@ -364,6 +425,40 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                 ) : (
                   pending.map(renderListing)
                 ))}
+
+              {tab === "reports" && (() => {
+                if (reports.length === 0) return (
+                  <div className="text-center py-12 text-gray-400"><p className="text-4xl mb-2">🛡️</p><p>No open reports</p></div>
+                );
+                const byListing = new Map<string, any[]>();
+                reports.forEach((r) => byListing.set(r.property_id, [...(byListing.get(r.property_id) || []), r]));
+                return Array.from(byListing.entries())
+                  .sort((a, b) => b[1].length - a[1].length)
+                  .map(([pid, rs]) => {
+                    const l = listings.find((x) => x.id === pid);
+                    return (
+                      <div key={pid} className="space-y-2">
+                        <div className="rounded-xl border border-red-800/60 bg-red-950/30 p-3">
+                          <p className="text-sm font-semibold text-red-200">{rs.length} report{rs.length > 1 ? "s" : ""}</p>
+                          <ul className="mt-1 space-y-1 text-xs text-red-100/90">
+                            {rs.map((r) => (
+                              <li key={r.id}>
+                                <b>{REPORT_LABEL[r.reason] || r.reason}</b>
+                                {r.details ? ` · "${r.details}"` : ""}
+                                <span className="text-red-300/60"> · {ownerEmail[r.reporter_id] || "user"} · {new Date(r.created_at).toLocaleDateString("en-IN")}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-2 flex gap-2">
+                            <button onClick={() => closeReports(pid, "resolved")} className="rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-semibold hover:bg-gray-600">Resolved (I've acted)</button>
+                            <button onClick={() => closeReports(pid, "dismissed")} className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700">Dismiss</button>
+                          </div>
+                        </div>
+                        {l ? renderListing(l) : <p className="text-xs text-gray-500">Listing not in the latest 300.</p>}
+                      </div>
+                    );
+                  });
+              })()}
 
               {tab === "listings" && allShown.map(renderListing)}
 

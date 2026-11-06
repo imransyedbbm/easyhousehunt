@@ -53,6 +53,7 @@ export default async function handler(req, res) {
 
   const chips = [
     `<span class="chip o">${esc(size)}</span>`,
+    p.is_verified && `<span class="chip" style="background:#1e3a8a;color:#bfdbfe">✓ Verified owner</span>`,
     furnishing && `<span class="chip">${esc(furnishing)}</span>`,
     p.area_sqft && `<span class="chip">${esc(p.area_sqft)} sq ft</span>`,
     !sale && p.deposit && `<span class="chip">Deposit ${esc(inr(p.deposit))}</span>`,
