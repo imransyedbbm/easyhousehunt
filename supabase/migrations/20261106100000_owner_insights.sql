@@ -43,7 +43,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.listing_stats() TO authenticated;
 
 ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ;
-UPDATE public.properties SET confirmed_at = COALESCE(updated_at, created_at, now()) WHERE confirmed_at IS NULL;
+UPDATE public.properties SET confirmed_at = COALESCE(created_at, now()) WHERE confirmed_at IS NULL;
 ALTER TABLE public.properties ALTER COLUMN confirmed_at SET DEFAULT now();
 
 CREATE OR REPLACE FUNCTION public.confirm_listing(p_property UUID)
