@@ -213,7 +213,7 @@ export default function MobileLayout({
         {/* Filters - only when half or full */}
         {sheetState !== "peek" && (
           <div className="flex-shrink-0">
-            <SearchFilters onChange={onFiltersChange} />
+            <SearchFilters onChange={onFiltersChange} initial={filters} />
           </div>
         )}
 
