@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BadgeCheck, TrendingUp, TrendingDown } from "lucide-react";
 import AdminInsights from "@/components/AdminInsights";
+import BulkImport from "@/components/BulkImport";
 
-type Tab = "pending" | "insights" | "reports" | "listings" | "messages" | "users" | "demand";
+type Tab = "pending" | "insights" | "import" | "reports" | "listings" | "messages" | "users" | "demand";
 
 const REPORT_LABEL: Record<string, string> = {
   let_out: "Already let out / sold", wrong_details: "Wrong details", broker: "Broker posing as owner", fake: "Fake / scam", other: "Other",
@@ -194,6 +195,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     { key: "pending", label: "Pending", count: stats.pending },
     { key: "insights", label: "Insights", count: "📈" as any },
     { key: "reports", label: "Reports", count: reports.length },
+    { key: "import", label: "Import", count: "CSV" as any },
     { key: "listings", label: "Listings", count: listings.length },
     { key: "messages", label: "Messages", count: stats.messages },
     { key: "users", label: "Users", count: stats.users },
@@ -429,6 +431,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                 ))}
 
               {tab === "insights" && <AdminInsights listings={listings} />}
+              {tab === "import" && <BulkImport onDone={() => { fetchAll(); setTab("listings"); }} />}
 
               {tab === "reports" && (() => {
                 if (reports.length === 0) return (
