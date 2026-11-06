@@ -108,3 +108,37 @@ describe("client and server agree", () => {
     expect(API_LOCALITIES.map((l: any) => l.name)).toEqual(LOCALITIES.map((l) => l.name));
   });
 });
+
+describe("rent guide", () => {
+  it("computes typical rent by size from rentals only", async () => {
+    const { rentStats, areaFaq } = await import("../../api/_lib/guide.js");
+    const homes = [
+      { bhk: 2, rent: 30000, listing_type: "rent" }, { bhk: 2, rent: 40000, listing_type: "rent" },
+      { bhk: 2, rent: 51000, listing_type: "rent" }, { bhk: 1, rent: 18000, listing_type: "rent" },
+      { bhk: 2, sale_price: 9e6, listing_type: "sale" }, { property_type: "PG", rent: 9000, listing_type: "rent" },
+    ];
+    const s = rentStats(homes);
+    const two = s.find((x: any) => x.label === "2 BHK");
+    expect(two).toMatchObject({ count: 3, median: 40000, low: 30000, high: 51000 });
+    expect(s.find((x: any) => x.label === "3 BHK")).toBeUndefined();
+    const faq = areaFaq("Koramangala", s, 5, []);
+    expect(faq.jsonld["@type"]).toBe("FAQPage");
+    expect(faq.html).toContain("₹30,000 to ₹51,000");
+    expect(faq.html).not.toContain("3 BHK");          // no question without data
+  });
+  it("shows the city-wide guide on /rent", async () => {
+    const { default: h } = await import("../../api/rent.js");
+    rows = [HOME, { ...HOME, rent: 42000 }];
+    const r = res(); await h({ query: {} }, r);
+    expect(r.body).toContain("Rent guide: Bengaluru");
+    expect(r.body).toContain("Koramangala · 2");
+  });
+  it("adds the guide and FAQ to area pages", async () => {
+    const { default: h } = await import("../../api/rent.js");
+    rows = [HOME, { ...HOME, id: "2", rent: 42000, share_code: "abc234" }];
+    const r = res(); await h({ query: { area: "koramangala" } }, r);
+    expect(r.body).toContain("Rent guide: Koramangala");
+    expect(r.body).toContain('"@type":"FAQPage"');
+    expect(r.body).toContain("2 BHK from ₹38,000");
+  });
+});
