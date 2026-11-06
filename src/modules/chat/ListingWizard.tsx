@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { COMMERCIAL_TYPES, furnishingOptions, isCommercial } from "@/lib/commercial";
 import { uploadListingPhotos } from "@/lib/photos";
 import LocationPicker from "@/components/map/LocationPicker";
@@ -33,6 +34,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
   onSuccess?: () => void;
 }) {
   const { user } = useAuth();
+  const t = useT();
   const [step, setStep] = useState(1);
   const [bench, setBench] = useState<Benchmark | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
@@ -264,7 +266,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-          <h2 className="font-bold text-lg">List Your Property</h2>
+          <h2 className="font-bold text-lg">{t("List Your Property")}</h2>
           {onClose && <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">✕</button>}
         </div>
 
@@ -286,7 +288,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
             <>
               {SALE_ENABLED && (
                 <div>
-                  <label className="text-sm text-gray-400">I want to *</label>
+                  <label className="text-sm text-gray-400">{t("I want to *")}</label>
                   <div className="flex gap-2 mt-1">
                     {(["rent", "sale"] as const).map(t => (
                       <button key={t} onClick={() => chooseListingType(t)}
@@ -298,7 +300,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 </div>
               )}
               <div>
-                <label className="text-sm text-gray-400">Property Type *</label>
+                <label className="text-sm text-gray-400">{t("Property Type *")}</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   {["Apartment", "Independent House", "PG", "Commercial"].filter(t => !(listingType === "sale" && t === "PG")).map(t => (
                     <button key={t} onClick={() => chooseType(t)}
@@ -356,7 +358,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Listing Title *</label>
+                    <label className="text-sm text-gray-400">{t("Listing Title *")}</label>
                     <input className={inp + " mt-1"} placeholder="e.g. 2,000 sq ft office, Koramangala 80 Ft Road" value={customProject} onChange={e => setCustomProject(e.target.value)} />
                   </div>
                 </>
@@ -401,7 +403,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
           {step === 2 && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm text-gray-400">{listingType === "sale" ? "Asking price (₹) *" : "Monthly Rent (₹) *"}</label>
+                <label className="text-sm text-gray-400">{listingType === "sale" ? t("Asking price (₹) *") : t("Monthly Rent (₹) *")}</label>
                 <input type="number" className={inp + " mt-1"} placeholder={listingType === "sale" ? "e.g. 8500000" : "e.g. 35000"} value={form.rent} onChange={e => set("rent", e.target.value)} />
                 {listingType === "sale" && Number(form.rent) > 0 && (
                   <p className="mt-1 text-xs text-green-400">{formatSalePrice(Number(form.rent))}</p>
@@ -418,13 +420,13 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 )}
               </div>
               <div>
-                {listingType === "rent" && <label className="text-sm text-gray-400">Deposit (₹)</label>}
+                {listingType === "rent" && <label className="text-sm text-gray-400">{t("Deposit (₹)")}</label>}
                 {listingType === "rent" && <input type="number" className={inp + " mt-1"} placeholder="e.g. 100000" value={form.deposit} onChange={e => set("deposit", e.target.value)} />}
               </div>
               <div>
                 {commercial ? null : form.property_type === "PG" ? (
                   <>
-                    <label className="text-sm text-gray-400">Occupancy *</label>
+                    <label className="text-sm text-gray-400">{t("Occupancy *")}</label>
                     <select className={inp + " mt-1"} value={form.occupancy} onChange={e => set("occupancy", e.target.value)}>
                       {["Single", "Double", "Triple"].map(n => <option key={n}>{n}</option>)}
                     </select>
@@ -449,7 +451,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
           {step === 3 && (
             <>
               <div>
-                <label className="text-sm text-gray-400">Furnishing</label>
+                <label className="text-sm text-gray-400">{t("Furnishing")}</label>
                 <div className="flex gap-2 mt-2">
                   {furnishingOptions(form.property_type).map(f => (
                     <button key={f} onClick={() => set("furnishing", f)}
@@ -461,7 +463,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
               </div>
               {listingType === "rent" && (
                 <div>
-                  <label className="text-sm text-gray-400">Available from</label>
+                  <label className="text-sm text-gray-400">{t("Available from")}</label>
                   <div className="flex gap-2 mt-2 items-center">
                     <button onClick={() => setAvailableFrom("")}
                       className={`py-2 px-3 rounded-lg text-sm font-medium border ${!availableFrom ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
@@ -525,7 +527,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
               )}
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="text-sm text-gray-400">Description</label>
+                  <label className="text-sm text-gray-400">{t("Description")}</label>
                   <button
                     type="button"
                     disabled={aiBusy}
@@ -546,7 +548,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                     }}
                     className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-300 hover:bg-orange-500/25 disabled:opacity-50"
                   >
-                    <Sparkles className="h-3.5 w-3.5" /> {aiBusy ? "Writing…" : form.description.trim() ? "Polish with AI" : "Write it for me"}
+                    <Sparkles className="h-3.5 w-3.5" /> {aiBusy ? "…" : form.description.trim() ? t("Polish with AI") : t("Write it for me")}
                   </button>
                 </div>
                 <textarea className={inp + " mt-1 h-28 resize-none"} placeholder="Lake view, quiet floor, near metro... (or jot a few words and tap 'Write it for me')" value={form.description} onChange={e => set("description", e.target.value)} />
@@ -560,7 +562,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
           {/* Step 4: Amenities */}
           {step === 4 && (
             <div>
-              <label className="text-sm text-gray-400 mb-3 block">Select all that apply</label>
+              <label className="text-sm text-gray-400 mb-3 block">{t("Select all that apply")}</label>
               <div className="grid grid-cols-2 gap-2">
                 {AMENITY_OPTIONS.map(a => (
                   <button key={a} onClick={() => toggleAmenity(a)}
@@ -585,7 +587,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 return (
                   <div className="rounded-xl bg-gray-800 p-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-300">Listing strength</span>
+                      <span className="text-gray-300">{t("Listing strength")}</span>
                       <b className={q.score >= 80 ? "text-green-400" : q.score >= 55 ? "text-yellow-300" : "text-red-300"}>{q.score}%</b>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-700">
@@ -722,7 +724,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
         <div className="px-6 py-4 border-t border-gray-700 flex justify-between">
           <button onClick={() => step === 1 ? onClose?.() : setStep(s => s - 1)}
             className="text-gray-400 hover:text-white px-4 py-2">
-            {step === 1 ? "Cancel" : "← Back"}
+            {step === 1 ? t("Cancel") : t("← Back")}
           </button>
           {step < 5 ? (
             <button
@@ -730,12 +732,12 @@ export default function ListingWizard({ onClose, onSuccess }: {
               disabled={!canNext()}
               className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-semibold"
             >
-              Next →
+              {t("Next →")}
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={saving || uploading || (photos.length === 0 && !photosOptional) || !ownerPhoneOk}
               className="bg-green-500 hover:bg-green-600 disabled:opacity-40 px-6 py-2 rounded-lg font-semibold">
-              {uploading ? "Uploading..." : saving ? "Submitting..." : !ownerPhoneOk ? "Add the owner's phone" : photos.length === 0 && !photosOptional ? "Add a photo to continue" : "🏠 Submit for review"}
+              {uploading ? "Uploading..." : saving ? "Submitting..." : !ownerPhoneOk ? "Add the owner's phone" : photos.length === 0 && !photosOptional ? t("Add a photo to continue") : t("🏠 Submit for review")}
             </button>
           )}
         </div>

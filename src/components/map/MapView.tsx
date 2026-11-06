@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { LocateFixed } from "lucide-react";
 import { sizeLabel } from "@/lib/commercial";
 import { useEffect, useRef, useState } from "react";
@@ -101,6 +102,7 @@ export default function MapView({
   const [preview, setPreview] = useState<Property | null>(null);
   const [nearMsg, setNearMsg] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const t = useT();
 
   const flash = (msg: string, ms = 0) => {
     if (flashTimer.current) window.clearTimeout(flashTimer.current);
@@ -326,7 +328,7 @@ export default function MapView({
           disabled={locating}
           className="rounded-full bg-gray-900/90 px-4 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10 hover:bg-gray-800 disabled:opacity-60"
         >
-          {locating ? "Locating…" : <span className="inline-flex items-center gap-1.5"><LocateFixed className="h-4 w-4" />Near me</span>}
+          {locating ? "Locating…" : <span className="inline-flex items-center gap-1.5"><LocateFixed className="h-4 w-4" />{t("Near me")}</span>}
         </button>
         {nearMsg && (
           <div className="flex items-start gap-2 rounded-xl bg-gray-900/95 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10">

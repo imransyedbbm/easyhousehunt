@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { COMMERCIAL_TYPES, SIZE_BANDS, furnishingOptions } from "@/lib/commercial";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildIndex, getSuggestions, type Suggestion } from "@/lib/searchIndex";
@@ -67,6 +68,7 @@ export default function SearchFilters({
     [allProperties, modeNow]
   );
   const [open, setOpen] = useState(false);
+  const t = useT();
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const suggestions = useMemo(
@@ -165,7 +167,7 @@ export default function SearchFilters({
         {(["All", "Homes", "Commercial"] as const).map((s) => (
           <button key={s} onClick={() => setSegment(s)}
             className={`flex-1 rounded-md py-1.5 ${segment === s ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
-            {s === "All" ? "All" : s === "Homes" ? "🏠 Homes" : "🏢 Commercial"}
+            {s === "All" ? t("All") : s === "Homes" ? `🏠 ${t("Homes")}` : `🏢 ${t("Commercial")}`}
           </button>
         ))}
       </div>
@@ -196,7 +198,7 @@ export default function SearchFilters({
         <div className="relative">
           <input
             className="w-full bg-gray-800 border-2 border-gray-500 hover:border-gray-400 rounded-xl pl-10 pr-3 py-3 text-base text-white placeholder-gray-300 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 shadow-inner"
-            placeholder="Search area or apartment name…"
+            placeholder={t("Search area or apartment name…")}
             aria-label="Search by area or apartment name"
             value={filters.search}
             onFocus={() => setOpen(true)}

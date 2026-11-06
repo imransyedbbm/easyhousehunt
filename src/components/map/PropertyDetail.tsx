@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { shareListing, whatsappShareUrl } from "@/lib/share";
 import { availabilityLabel } from "@/lib/requirements";
 import { freshnessLabel } from "@/lib/insights";
@@ -28,6 +29,7 @@ export default function PropertyDetail({
   onRequireLogin?: () => void;
 }) {
   const { user } = useAuth();
+  const t = useT();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -118,7 +120,7 @@ export default function PropertyDetail({
               }}
               className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl py-2 text-sm font-semibold"
             >
-              🔗 {shareNote || "Share"}
+              🔗 {shareNote || t("Share")}
             </button>
             <a href={whatsappShareUrl(property)} target="_blank" rel="noopener noreferrer"
               className="flex-1 text-center bg-green-700 hover:bg-green-600 rounded-xl py-2 text-sm font-semibold">
@@ -169,7 +171,7 @@ export default function PropertyDetail({
           )}
           {!property.is_sample && isNewListing(property.created_at) && (
             <span className="inline-flex items-center gap-1 bg-orange-500/20 text-orange-200 px-3 py-1 rounded-full text-sm">
-              <Sparkles className="h-4 w-4" /> New this week
+              <Sparkles className="h-4 w-4" /> {t("New this week")}
             </span>
           )}
           {property.distance_label && (
@@ -182,7 +184,7 @@ export default function PropertyDetail({
           )}
           {property.is_verified && (
             <span className="inline-flex items-center gap-1 bg-blue-900/60 text-blue-200 px-3 py-1 rounded-full text-sm" title="EasyHouseHunt has verified this owner">
-              <BadgeCheck className="h-4 w-4" /> Verified owner
+              <BadgeCheck className="h-4 w-4" /> {t("Verified owner")}
             </span>
           )}
           {freshnessLabel(property.confirmed_at) && (
@@ -238,14 +240,14 @@ export default function PropertyDetail({
           disabled={!!property.is_sample || reservedForOthers}
           className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {reservedForOthers ? "Reserved · not taking new enquiries" : property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? "📞 Contact the seller" : "📞 Connect with Owner") : "🔐 Login to Connect"}
+          {reservedForOthers ? "Reserved · not taking new enquiries" : property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? `📞 ${t("Contact the seller")}` : `📞 ${t("Connect with Owner")}`) : `🔐 ${t("Login to Connect")}`}
         </button>
         {!property.is_sample && !reservedForOthers && property.landlord_id && property.landlord_id !== user?.id && (
           <button
             onClick={() => (user ? setVisitOpen(true) : (onRequireLogin ?? onConnectClick)())}
             className="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800 py-3 font-semibold text-white hover:bg-gray-700"
           >
-            📅 Schedule a visit
+            📅 {t("Schedule a visit")}
           </button>
         )}
         {visitOpen && <VisitRequest propertyId={property.id} title={property.title} onClose={() => setVisitOpen(false)} />}
