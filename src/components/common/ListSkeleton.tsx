@@ -1,7 +1,7 @@
 /** Shimmering placeholder cards shown while listings load. */
 export default function ListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="space-y-3 px-4 pb-4" aria-busy="true" aria-label="Loading listings">
+    <div className="space-y-3 px-4 pb-4" role="status" aria-busy="true" aria-label="Loading listings">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-xl bg-gray-900 ring-1 ring-white/5">
           <div className="h-36 w-full animate-pulse bg-gray-800" />

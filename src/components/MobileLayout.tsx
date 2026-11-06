@@ -1,7 +1,7 @@
 import { openRequirement } from "@/lib/requirements";
 import BrandLogo from "@/components/BrandLogo";
 import { useState, useRef } from "react";
-import MapView from "./map/MapView";
+import MapView from "./map/LazyMapView";
 import UnreadBadge from "@/components/UnreadBadge";
 import PropertyList from "./map/PropertyList";
 import PropertyDetail from "./map/PropertyDetail";
