@@ -10,6 +10,7 @@ import { Property } from "../types/property";
 import { useAuth } from "@/hooks/useAuth";
 import { MessageSquare, LayoutDashboard, ClipboardList, Scale, Lock, Settings, LogOut, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import ListSkeleton, { LoadError } from "@/components/common/ListSkeleton";
+import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 
 type SheetState = "peek" | "half" | "full";
 
@@ -131,6 +132,7 @@ export default function MobileLayout({
                       className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
                       <Scale className="h-4 w-4" /> RentRight {!rentRightUnlocked && <Lock className="ml-auto h-3.5 w-3.5" />}
                     </button>
+                    <GrowthMenuItems onDone={() => setMobileMenuOpen(false)} />
                     <div className="border-t border-gray-700 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
                       <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-white">Privacy</a>
                       <span>·</span>
@@ -151,10 +153,13 @@ export default function MobileLayout({
               </div>
             </>
           ) : (
-            <button onClick={onSignIn}
-              className="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-full font-medium">
-              Sign in
-            </button>
+            <div className="flex items-center gap-2">
+              <InstallLink className="inline-flex items-center gap-1 rounded-full bg-gray-800 px-3 py-1.5 text-xs font-medium text-white [&>svg]:h-3.5 [&>svg]:w-3.5" />
+              <button onClick={onSignIn}
+                className="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-full font-medium">
+                Sign in
+              </button>
+            </div>
           )}
         </div>
       </div>
