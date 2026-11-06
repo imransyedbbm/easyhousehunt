@@ -8,7 +8,7 @@ const KEY = "ehh_welcomed_v1";
 
 export function shouldShowWelcome(): boolean {
   const q = new URLSearchParams(window.location.search);
-  if (["p", "area", "list", "requirement"].some((k) => q.has(k))) return false;
+  if (["p", "area", "list", "requirement", "segment", "open"].some((k) => q.has(k))) return false;
   try { return !localStorage.getItem(KEY); } catch { return true; }
 }
 

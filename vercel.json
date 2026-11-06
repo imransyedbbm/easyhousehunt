@@ -9,6 +9,14 @@
       "destination": "/api/shortlist?codes=:codes"
     },
     {
+      "source": "/office-space",
+      "destination": "/api/office"
+    },
+    {
+      "source": "/office-space/:area",
+      "destination": "/api/office?area=:area"
+    },
+    {
       "source": "/rent",
       "destination": "/api/rent"
     },

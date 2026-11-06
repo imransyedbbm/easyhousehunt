@@ -88,3 +88,17 @@ describe("localities", () => {
     }
   });
 });
+
+import { seatEstimate } from "@/lib/commercial";
+import { rentPerSqft } from "@/lib/price";
+describe("commercial", () => {
+  it("estimates seats for offices only", () => {
+    expect(seatEstimate({ property_type: "Commercial", commercial_type: "Office space", area_sqft: 1400 })).toBe(20);
+    expect(seatEstimate({ property_type: "Commercial", commercial_type: "Warehouse / Godown", area_sqft: 5000 })).toBeNull();
+    expect(seatEstimate({ property_type: "Apartment", area_sqft: 1400 })).toBeNull();
+  });
+  it("shows rent per sq ft for commercial rentals", () => {
+    expect(rentPerSqft({ property_type: "Commercial", rent: 170000, area_sqft: 2000 })).toBe("₹85/sq ft/mo");
+    expect(rentPerSqft({ property_type: "Apartment", rent: 40000, area_sqft: 1000 })).toBeNull();
+  });
+});

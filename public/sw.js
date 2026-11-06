@@ -22,7 +22,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/l/") || url.pathname.startsWith("/rent") ||
-      url.pathname.startsWith("/s/") || url.pathname === "/sitemap.xml") return;
+      url.pathname.startsWith("/s/") || url.pathname.startsWith("/office-space") || url.pathname === "/sitemap.xml") return;
 
   if (url.pathname.startsWith("/assets/")) {
     e.respondWith(

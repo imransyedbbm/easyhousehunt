@@ -1,7 +1,8 @@
 import { Property } from "../../types/property";
 import { formatDistance, isNewListing } from "@/lib/geo";
 import SaveButton from "@/components/SaveButton";
-import { formatPrice } from "@/lib/price";
+import { formatPrice, rentPerSqft } from "@/lib/price";
+import { seatEstimate } from "@/lib/commercial";
 import { availabilityLabel, openRequirement } from "@/lib/requirements";
 
 type Props = {
@@ -61,9 +62,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
             <span className="mb-1 mr-1 inline-block rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">NEW</span>
           )}
           <h3 className="text-white font-semibold text-sm pr-8">{p.title || "Untitled"}</h3>
-          <p className="text-green-400 font-bold">{formatPrice(p)}</p>
+          <p className="text-green-400 font-bold">{formatPrice(p)}{rentPerSqft(p) && <span className="ml-1.5 text-xs font-normal text-gray-400">{rentPerSqft(p)}</span>}</p>
           {p.property_type === "Commercial" ? (
-            <p className="text-gray-300 text-xs">🏢 {p.commercial_type || "Commercial"}{p.area_sqft ? ` · ${p.area_sqft.toLocaleString("en-IN")} sq ft` : ""}</p>
+            <p className="text-gray-300 text-xs">🏢 {p.commercial_type || "Commercial"}{p.area_sqft ? ` · ${p.area_sqft.toLocaleString("en-IN")} sq ft` : ""}{seatEstimate(p) ? ` · fits ~${seatEstimate(p)} seats` : ""}</p>
           ) : p.property_type === "PG" ? (
             <p className="text-gray-300 text-xs">PG · {p.occupancy || "Single"} Occupancy</p>
           ) : p.bhk ? (

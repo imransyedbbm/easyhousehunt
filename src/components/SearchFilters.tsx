@@ -1,4 +1,4 @@
-import { COMMERCIAL_TYPES, furnishingOptions } from "@/lib/commercial";
+import { COMMERCIAL_TYPES, SIZE_BANDS, furnishingOptions } from "@/lib/commercial";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildIndex, getSuggestions, type Suggestion } from "@/lib/searchIndex";
 import { useSearchableProperties, useSearchNote } from "@/lib/searchStore";
@@ -13,6 +13,8 @@ export interface Filters {
   search: string;
   propertyType: string;
   commercialType?: string[];
+  /** Commercial size band keys (see SIZE_BANDS). */
+  sizeBand?: string[];
   occupancy: string[];
   area?: { name: string; lat: number; lng: number } | null;
   /** Radius around the picked area/office, km (default 2.5). */
@@ -144,6 +146,7 @@ export default function SearchFilters({
     filters.minRent > 0 || filters.maxRent < NO_MAX_RENT,
     filters.propertyType !== "All",
     (filters.commercialType?.length ?? 0) > 0,
+    (filters.sizeBand?.length ?? 0) > 0,
     filters.occupancy.length > 0,
   ].filter(Boolean).length;
 
@@ -152,7 +155,7 @@ export default function SearchFilters({
   const segment: Segment = filters.propertyType === "All" ? "All" : isCommercialView ? "Commercial" : "Homes";
   const setSegment = (s: Segment) => {
     if (s === segment) return;
-    update({ propertyType: s, commercialType: [], bhk: [], furnishing: [], occupancy: [] });
+    update({ propertyType: s, commercialType: [], sizeBand: [], bhk: [], furnishing: [], occupancy: [] });
   };
 
   return (
@@ -352,6 +355,25 @@ export default function SearchFilters({
                       onClick={() => update({ commercialType: on ? (filters.commercialType ?? []).filter((x) => x !== c) : [...(filters.commercialType ?? []), c] })}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border ${on ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
                       {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Commercial: size */}
+          {filters.propertyType === "Commercial" && (
+            <div>
+              <p className="text-xs text-gray-400 mb-2">Size (sq ft)</p>
+              <div className="flex gap-2 flex-wrap">
+                {SIZE_BANDS.map((b) => {
+                  const on = (filters.sizeBand ?? []).includes(b.key);
+                  return (
+                    <button key={b.key}
+                      onClick={() => update({ sizeBand: on ? (filters.sizeBand ?? []).filter((x) => x !== b.key) : [...(filters.sizeBand ?? []), b.key] })}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border ${on ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
+                      {b.label}
                     </button>
                   );
                 })}

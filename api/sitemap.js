@@ -10,6 +10,8 @@ export default async function handler(req, res) {
     url(`${SITE}/`, today, "1.0"),
     url(`${SITE}/rent`, today, "0.8"),
     ...LOCALITIES.map((l) => url(`${SITE}/rent/${l.slug}`, today, "0.7")),
+    url(`${SITE}/office-space`, today, "0.8"),
+    ...LOCALITIES.map((l) => url(`${SITE}/office-space/${l.slug}`, today, "0.6")),
     ...rows.filter((p) => p.availability !== "let_out").map((p) => url(SITE + listingPath(p), String(p.created_at || "").slice(0, 10) || null, "0.6")),
     ...["about", "contact", "privacy", "terms"].map((n) => url(`${SITE}/${n}.html`, null, "0.3")),
   ];

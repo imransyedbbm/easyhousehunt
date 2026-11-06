@@ -103,7 +103,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(
 <style>${CSS}</style></head><body>
 <header><a class="brand" href="/">EasyHouse<span>Hunt</span></a><a class="btn btn-o" style="padding:9px 14px;font-size:14px" href="/">Open map</a></header>
 ${body}
-<footer>Zero brokerage · direct to owners · Bengaluru<br><br><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></footer>
+<footer>Zero brokerage · direct to owners · Bengaluru<br><br><a href="/rent">Homes by area</a><a href="/office-space">Office space</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></footer>
 </body></html>`;
 }
 
