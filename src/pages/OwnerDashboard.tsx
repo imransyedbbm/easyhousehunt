@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import { useListingStats, daysSince, confirmListing, setLetOut, STALE_DAYS } from "@/lib/insights";
 import { whatsappShareUrl } from "@/lib/share";
 import { listingQuality } from "@/lib/quality";
+import VisitsPanel from "@/components/VisitsPanel";
+import { loadVisits } from "@/lib/visits";
 
-type Tab = "messages" | "listings" | "saved";
+type Tab = "messages" | "visits" | "listings" | "saved";
 
 type Convo = { otherId: string; name: string; count: number; unread: number; last: string };
 type Group = {
@@ -45,6 +47,10 @@ export default function OwnerDashboard({
   const version = useMessageVersion();
   const savedIds = useSavedIds();
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [visitsToAnswer, setVisitsToAnswer] = useState(0);
+  useEffect(() => {
+    if (user) loadVisits(user.id).then((v) => setVisitsToAnswer(v.filter((x) => x.owner_id === user.id && x.status === "pending").length));
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [rows, setRows] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [saved, setSaved] = useState<any[]>([]);
@@ -215,6 +221,7 @@ export default function OwnerDashboard({
 
   const TABS: { key: Tab; label: string; count: number; hot?: boolean }[] = [
     { key: "messages", label: "Messages", count: unread > 0 ? unread : groups.length, hot: unread > 0 },
+    { key: "visits", label: "Visits", count: visitsToAnswer, hot: visitsToAnswer > 0 },
     { key: "listings", label: "My Listings", count: listings.length },
     { key: "saved", label: "Saved", count: saved.length },
   ];
@@ -468,6 +475,8 @@ export default function OwnerDashboard({
               )}
 
               {/* SAVED */}
+              {tab === "visits" && user && <VisitsPanel userId={user.id} onCount={setVisitsToAnswer} />}
+
               {tab === "saved" && (
                 <div className="p-4 space-y-3">
                   {saved.length === 0 ? (

@@ -11,6 +11,7 @@ import { formatPrice, pricePerSqft } from "@/lib/price";
 import { httpPhotos } from "@/lib/photos";
 import { addRecent } from "@/lib/recentlyViewed";
 import ReportListing from "@/components/ReportListing";
+import VisitRequest from "@/components/VisitRequest";
 import { BadgeCheck, Sparkles } from "lucide-react";
 import { isNewListing } from "@/lib/geo";
 
@@ -32,6 +33,7 @@ export default function PropertyDetail({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
   const [shareNote, setShareNote] = useState("");
+  const [visitOpen, setVisitOpen] = useState(false);
   // A reserved listing stays open only to people already talking to the owner.
   const [hasThread, setHasThread] = useState(false);
   useEffect(() => {
@@ -232,6 +234,15 @@ export default function PropertyDetail({
         >
           {reservedForOthers ? "Reserved · not taking new enquiries" : property.is_sample ? "Sample listing · cannot be contacted" : user ? (property.listing_type === "sale" ? "📞 Contact the seller" : "📞 Connect with Owner") : "🔐 Login to Connect"}
         </button>
+        {!property.is_sample && !reservedForOthers && property.landlord_id && property.landlord_id !== user?.id && (
+          <button
+            onClick={() => (user ? setVisitOpen(true) : (onRequireLogin ?? onConnectClick)())}
+            className="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800 py-3 font-semibold text-white hover:bg-gray-700"
+          >
+            📅 Schedule a visit
+          </button>
+        )}
+        {visitOpen && <VisitRequest propertyId={property.id} title={property.title} onClose={() => setVisitOpen(false)} />}
         {!property.is_sample && property.landlord_id !== user?.id && (
           <div className="text-center">
             <ReportListing propertyId={property.id} signedIn={!!user} onRequireLogin={onRequireLogin ?? onConnectClick} />
