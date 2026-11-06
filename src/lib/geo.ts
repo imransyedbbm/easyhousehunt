@@ -21,3 +21,11 @@ export function formatDistance(m: number): string {
 }
 
 export const AREA_RADIUS_M = 2500; // "near an area" = within 2.5 km of its centre
+
+/** Rough Bengaluru drive time: road distance ≈ 1.35 × straight line, ~20 km/h average door to door. */
+export function driveMinutes(m: number): number {
+  return Math.max(3, Math.round(((m * 1.35) / 1000 / 20) * 60 / 5) * 5);
+}
+
+export const isNewListing = (createdAt?: string | null, days = 7) =>
+  !!createdAt && Date.now() - new Date(createdAt).getTime() < days * 86_400_000;

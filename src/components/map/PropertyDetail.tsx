@@ -11,7 +11,8 @@ import { formatPrice, pricePerSqft } from "@/lib/price";
 import { httpPhotos } from "@/lib/photos";
 import { addRecent } from "@/lib/recentlyViewed";
 import ReportListing from "@/components/ReportListing";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Sparkles } from "lucide-react";
+import { isNewListing } from "@/lib/geo";
 
 export default function PropertyDetail({
   property,
@@ -162,6 +163,14 @@ export default function PropertyDetail({
             <span className="bg-teal-900/60 text-teal-200 px-3 py-1 rounded-full text-sm">
               📅 {availabilityLabel(property.availability_date)}
             </span>
+          )}
+          {!property.is_sample && isNewListing(property.created_at) && (
+            <span className="inline-flex items-center gap-1 bg-orange-500/20 text-orange-200 px-3 py-1 rounded-full text-sm">
+              <Sparkles className="h-4 w-4" /> New this week
+            </span>
+          )}
+          {property.distance_label && (
+            <span className="bg-blue-900/50 text-blue-200 px-3 py-1 rounded-full text-sm">🚗 {property.distance_label}</span>
           )}
           {property.is_verified && (
             <span className="inline-flex items-center gap-1 bg-blue-900/60 text-blue-200 px-3 py-1 rounded-full text-sm" title="EasyHouseHunt has verified this owner">

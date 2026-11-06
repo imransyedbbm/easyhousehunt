@@ -8,7 +8,7 @@ import UnreadBadge from "@/components/UnreadBadge";
 import { setMessagesOpenHandler } from "@/lib/messageStore";
 import { setSignInRequestHandler } from "@/lib/saved";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { AREA_RADIUS_M, distanceMeters } from "@/lib/geo";
+import { AREA_RADIUS_M, distanceMeters, driveMinutes, formatDistance } from "@/lib/geo";
 import { setPropertySelectHandler, setSearchableProperties, setSearchNote } from "@/lib/searchStore";
 import PropertyList from "./components/map/PropertyList";
 import PropertyDetail from "./components/map/PropertyDetail";
@@ -91,7 +91,7 @@ function App() {
   async function fetchProperties() {
     setLoadFailed(false);
     try {
-      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price, is_verified";
+      const FIELDS = "id, title, rent, bhk, address, latitude, longitude, deposit, furnishing, area_sqft, description, amenities, media_urls, landlord_id, property_type, occupancy, is_sample, listing_type, sale_price, is_verified, created_at";
       const query = (fields: string) => supabase
         .from("properties")
         .select(fields)
@@ -161,6 +161,7 @@ function App() {
         commercial_type: p.commercial_type ?? null,
         is_sample: p.is_sample ?? false,
         is_verified: p.is_verified ?? false,
+        created_at: p.created_at ?? null,
         share_code: p.share_code ?? null,
         availability: p.availability ?? "available",
         availability_date: p.availability_date ?? null,
@@ -213,17 +214,25 @@ function App() {
       .filter((p) => p.latitude != null && p.longitude != null)
       .map((p) => ({ p, d: distanceMeters(focus, { lat: p.latitude!, lng: p.longitude! }) }))
       .sort((a, b) => a.d - b.d);
-    const within = ranked.filter((r) => r.d <= AREA_RADIUS_M);
+    const radiusM = filters.radiusKm ? filters.radiusKm * 1000 : AREA_RADIUS_M;
+    const within = ranked.filter((r) => r.d <= radiusM);
     if (ranked.length === 0) {
       areaNote = "No listings match your filters.";
     } else if (within.length === 0) {
-      areaNote = `No listings within 2.5 km of ${focus.name} yet. Showing the nearest ones.`;
+      areaNote = `No listings within ${radiusM / 1000} km of ${focus.name} yet. Showing the nearest ones.`;
     }
     scoped = (within.length > 0 ? within : ranked.slice(0, 8)).map((r) => r.p);
   }
 
   const withDistance: Property[] = scoped.map((p) => ({
     ...p,
+    distance_label:
+      focus && p.latitude != null && p.longitude != null
+        ? (() => {
+            const d = distanceMeters(focus, { lat: p.latitude, lng: p.longitude });
+            return `${formatDistance(d)} · ~${driveMinutes(d)} min drive to ${focus.name}`;
+          })()
+        : null,
     distance_m:
       userLoc && p.latitude != null && p.longitude != null
         ? distanceMeters(userLoc, { lat: p.latitude, lng: p.longitude })
