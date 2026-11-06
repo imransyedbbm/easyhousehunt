@@ -8,12 +8,16 @@ import PropertyDetail from "./map/PropertyDetail";
 import SearchFilters, { Filters } from "./SearchFilters";
 import { Property } from "../types/property";
 import { useAuth } from "@/hooks/useAuth";
+import { MessageSquare, LayoutDashboard, ClipboardList, Scale, Lock, Settings, LogOut, Plus, ChevronUp, ChevronDown } from "lucide-react";
+import ListSkeleton, { LoadError } from "@/components/common/ListSkeleton";
 
 type SheetState = "peek" | "half" | "full";
 
 export default function MobileLayout({
   properties,
   loading,
+  loadFailed = false,
+  onRetry,
   filters,
   onFiltersChange,
   onSelectProperty,
@@ -32,6 +36,8 @@ export default function MobileLayout({
 }: {
   properties: Property[];
   loading: boolean;
+  loadFailed?: boolean;
+  onRetry?: () => void;
   filters: Filters;
   onFiltersChange: (f: Filters) => void;
   onSelectProperty: (p: Property) => void;
@@ -105,25 +111,25 @@ export default function MobileLayout({
                     </div>
                     <button onClick={() => { onOpenInbox(); setMobileMenuOpen(false); }}
                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                      💬 Messages <UnreadBadge />
+                      <MessageSquare className="h-4 w-4" /> Messages <UnreadBadge />
                     </button>
                     <button onClick={() => { onOwnerDash(); setMobileMenuOpen(false); }}
                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                      📋 My Dashboard
+                      <LayoutDashboard className="h-4 w-4" /> My Dashboard
                     </button>
                     {isAdmin && (
                       <button onClick={() => { onAdminDash(); setMobileMenuOpen(false); }}
                         className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                        ⚙️ Admin Panel
+                        <Settings className="h-4 w-4" /> Admin Panel
                       </button>
                     )}
                     <button onClick={() => { openRequirement(); setMobileMenuOpen(false); }}
                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700 flex items-center gap-2">
-                      📝 My requirements
+                      <ClipboardList className="h-4 w-4" /> My requirements
                     </button>
                     <button onClick={() => { onRentRight(); setMobileMenuOpen(false); }}
                       className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-700 flex items-center gap-2 ${rentRightUnlocked ? "text-white" : "text-gray-500"}`}>
-                      ⚖️ RentRight {!rentRightUnlocked && <span className="ml-auto text-xs">🔒</span>}
+                      <Scale className="h-4 w-4" /> RentRight {!rentRightUnlocked && <Lock className="ml-auto h-3.5 w-3.5" />}
                     </button>
                     <div className="border-t border-gray-700 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
                       <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-white">Privacy</a>
@@ -137,7 +143,7 @@ export default function MobileLayout({
                     <div className="border-t border-gray-700">
                       <button onClick={() => { onSignOut(); setMobileMenuOpen(false); }}
                         className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
-                        ↪ Sign Out
+                        <LogOut className="h-4 w-4" /> Sign Out
                       </button>
                     </div>
                   </div>
@@ -169,11 +175,11 @@ export default function MobileLayout({
       <div className="absolute left-4 z-20 flex gap-2" style={{bottom: `calc(${sheetHeights[sheetState]} + 16px)`, transition: "bottom 0.3s ease"}}>
         <button onClick={onListProperty}
           className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
-          + List Property
+          <span className="inline-flex items-center gap-1"><Plus className="h-4 w-4" /> List</span>
         </button>
         <button onClick={openRequirement}
           className="bg-gray-900/95 hover:bg-gray-800 border border-gray-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg">
-          📝 Post Requirement
+          <span className="inline-flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Requirement</span>
         </button>
       </div>
 
@@ -186,19 +192,19 @@ export default function MobileLayout({
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-600 rounded-full" />
+          <div className="w-10 h-1 bg-gray-600 rounded-full" role="button" aria-label="Expand listings" />
         </div>
 
         {/* Sheet header */}
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="flex items-center justify-between">
             <p className="text-white text-sm font-semibold">
-              {loading ? "Loading..." : `${properties.length} properties`}
+              {loading ? "Finding homes…" : loadFailed ? "Couldn't load listings" : `${properties.length} ${properties.length === 1 ? "property" : "properties"}`}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setSheetState("half")}
                 className="text-xs text-gray-400">
-                {sheetState === "peek" ? "▲ Show" : sheetState === "full" ? "▼ Less" : ""}
+                {sheetState === "peek" ? <span className="inline-flex items-center gap-1"><ChevronUp className="h-3.5 w-3.5" />Show</span> : sheetState === "full" ? <span className="inline-flex items-center gap-1"><ChevronDown className="h-3.5 w-3.5" />Less</span> : ""}
               </button>
             </div>
           </div>
@@ -215,7 +221,9 @@ export default function MobileLayout({
         {sheetState !== "peek" && (
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-gray-400 px-4 py-2 text-sm">Loading...</p>
+              <ListSkeleton count={3} />
+            ) : loadFailed && onRetry ? (
+              <LoadError onRetry={onRetry} />
             ) : (
               <PropertyList
                 properties={properties}
@@ -234,7 +242,7 @@ export default function MobileLayout({
           <div className="flex items-center justify-center flex-1 gap-2"
             onClick={() => setSheetState("half")}>
             <p className="text-gray-400 text-sm">
-              {loading ? "Loading..." : `${properties.length} properties nearby — tap to browse`}
+              {loading ? "Finding homes near you…" : loadFailed ? "Tap to retry" : `${properties.length} ${properties.length === 1 ? "property" : "properties"} nearby — tap to browse`}
             </p>
           </div>
         )}
