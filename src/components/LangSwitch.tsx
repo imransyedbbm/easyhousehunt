@@ -11,7 +11,7 @@ export default function LangSwitch({ className = "" }: { className?: string }) {
         <button key={l.code} lang={l.code}
           onClick={() => setLang(l.code)}
           aria-pressed={lang === l.code}
-          className={`rounded-full px-2.5 py-1 font-medium ${lang === l.code ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
+          className={`min-h-[28px] min-w-[32px] rounded-full px-2.5 py-1.5 font-medium ${lang === l.code ? "bg-orange-500 text-white" : "text-gray-300 hover:text-white"}`}>
           {l.code === "en" ? "EN" : l.label}
         </button>
       ))}

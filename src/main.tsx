@@ -6,6 +6,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { UserLocationProvider } from "./hooks/useUserLocation";
 import { Toaster } from "sonner";
 import "./index.css";
+import { hydrateWelcome } from "./components/WelcomeIsland";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <AuthProvider>
@@ -17,6 +18,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </UserLocationProvider>
   </AuthProvider>
 );
+
+// First-visit welcome was pre-rendered into the page; take it over in place.
+hydrateWelcome();
 
 // Installable app + faster repeat visits (production only).
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
