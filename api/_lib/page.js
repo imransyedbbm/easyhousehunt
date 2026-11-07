@@ -31,6 +31,7 @@ export async function sb(path, attempt = 0) {
 export function sizeLabel(p) {
   if (p.property_type === "Commercial") return p.commercial_type || "Commercial space";
   if (p.property_type === "PG") return p.occupancy ? `PG · ${p.occupancy} occupancy` : "PG";
+  if (p.property_type === "Flatmate") return `${p.occupancy && p.occupancy !== "Single" ? "Shared room" : "Private room"}${p.bhk ? ` in ${p.bhk} BHK` : ""}`;
   return p.bhk ? `${p.bhk} BHK` : p.property_type || "Home";
 }
 
@@ -50,7 +51,7 @@ export function slugify(s) {
 }
 
 export function listingPath(p) {
-  const size = p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
+  const size = p.property_type === "PG" ? "pg" : p.property_type === "Flatmate" ? "room" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
   return p.share_code ? `/l/${slugify(`${size} ${p.title || "home"}`)}-${p.share_code}` : `/l/${p.id}`;
 }
 

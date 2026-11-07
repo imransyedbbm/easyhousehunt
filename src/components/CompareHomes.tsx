@@ -7,7 +7,7 @@ type Row = { label: string; get: (p: any) => string | number | null | undefined;
 const ROWS: Row[] = [
   { label: "Price", get: (p) => formatPrice(p) },
   { label: "Deposit", get: (p) => (p.deposit ? `₹${Number(p.deposit).toLocaleString("en-IN")}` : "—") },
-  { label: "Size", get: (p) => (p.property_type === "PG" ? `PG · ${p.occupancy || "Single"}` : p.bhk ? `${p.bhk} BHK` : p.commercial_type || p.property_type || "—") },
+  { label: "Size", get: (p) => (p.property_type === "PG" ? `PG · ${p.occupancy || "Single"}` : p.property_type === "Flatmate" ? `Room · ${p.occupancy && p.occupancy !== "Single" ? "shared" : "private"}${p.bhk ? ` in ${p.bhk} BHK` : ""}` : p.bhk ? `${p.bhk} BHK` : p.commercial_type || p.property_type || "—") },
   { label: "Area", get: (p) => (p.area_sqft ? `${Number(p.area_sqft).toLocaleString("en-IN")} sq ft` : "—") },
   { label: "Price / sq ft", get: (p) => pricePerSqft(p) || (p.listing_type !== "sale" && p.rent && p.area_sqft ? `₹${(p.rent / p.area_sqft).toFixed(1)}/sq ft/mo` : "—") },
   { label: "Furnishing", get: (p) => p.furnishing || "—" },

@@ -1,3 +1,4 @@
+import { isFlatmate, flatmateLabel } from "@/lib/flatmate";
 import { isFeatured } from "@/lib/featured";
 import { useT } from "@/lib/i18n";
 import { shareListing, whatsappShareUrl } from "@/lib/share";
@@ -141,6 +142,12 @@ export default function PropertyDetail({
             <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
               🏢 {property.commercial_type || "Commercial"}
             </span>
+          ) : isFlatmate(property.property_type) ? (
+            <>
+              <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">🛏️ {flatmateLabel(property)}</span>
+              {property.gender_preference && <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">{property.gender_preference === "Any" ? "Any gender" : property.gender_preference}</span>}
+              {property.bathroom_type && <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">{property.bathroom_type} bathroom</span>}
+            </>
           ) : property.property_type === "PG" && property.occupancy ? (
             <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
               {property.occupancy} Occupancy

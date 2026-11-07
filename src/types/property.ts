@@ -9,6 +9,9 @@ export type Property = {
   confirmed_at?: string | null;
   /** Paid/admin boost: shown first with a Featured badge until this time. */
   featured_until?: string | null;
+  /** PG / Flatmate only. */
+  gender_preference?: string | null;
+  bathroom_type?: string | null;
   preferred_tenants?: string[] | null;
   availability?: "available" | "reserved" | "let_out" | string | null;
   distance_m?: number | null;

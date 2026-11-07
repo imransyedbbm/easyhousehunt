@@ -23,7 +23,7 @@ export type ParsedRow = { line: number; data: Record<string, unknown> | null; ow
 const num = (v: string) => { const n = Number(String(v).replace(/[₹,\s]/g, "")); return Number.isFinite(n) && v.trim() !== "" ? n : null; };
 const list = (v: string) => v.split(/[;|]/).map((x) => x.trim()).filter(Boolean);
 const ci = (v: string, opts: readonly string[]) => opts.find((o) => o.toLowerCase() === v.trim().toLowerCase()) ?? null;
-const PTYPES = ["Apartment", "Independent House", "Villa", "PG", "Commercial"];
+const PTYPES = ["Apartment", "Independent House", "Villa", "PG", "Flatmate", "Commercial"];
 
 /** Validate a CSV file into insert-ready rows. Admin-only use; landlordId is the admin listing on behalf. */
 export function parseListings(text: string, landlordId: string): { rows: ParsedRow[]; headerError: string | null } {
@@ -51,7 +51,7 @@ export function parseListings(text: string, landlordId: string): { rows: ParsedR
     if (!sale && !(rent && rent > 0)) errors.push("rent is missing");
     if (sale && !(salePrice && salePrice > 0)) errors.push("sale_price is missing");
     const bhk = num(g("bhk"));
-    if (!commercial && ptype !== "PG" && !(bhk && bhk >= 1 && bhk <= 10)) errors.push("bhk must be 1–10");
+    if (!commercial && ptype !== "PG" && ptype !== "Flatmate" && !(bhk && bhk >= 1 && bhk <= 10)) errors.push("bhk must be 1–10");
 
     let lat = num(g("latitude")), lng = num(g("longitude"));
     if (lat == null || lng == null) {

@@ -12,7 +12,7 @@ export function listingQuality(l: L): { score: number; tips: QualityTip[] } {
   const photos = httpPhotos(l.media_urls).length;
   const desc = (l.description || "").trim().length;
   const rent = (l.listing_type ?? "rent") !== "sale";
-  const homey = l.property_type !== "Commercial" && l.property_type !== "PG";
+  const homey = !["Commercial", "PG", "Flatmate"].includes(l.property_type ?? "");
   const checks: Array<[boolean, QualityTip]> = [
     [photos >= 1, { key: "photo", label: "Add at least one photo", points: 20 }],
     [photos >= 4, { key: "photos4", label: `Add ${Math.max(1, 4 - photos)} more photo${4 - photos === 1 ? "" : "s"} (kitchen, bathroom, view)`, points: 15 }],
