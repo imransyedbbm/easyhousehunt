@@ -130,3 +130,13 @@ describe("bulk import", () => {
     expect(parseListings("name,price\nx,1", "a").headerError).toMatch(/title, address, property_type/);
   });
 });
+
+import { renderWelcome } from "../prerender";
+describe("pre-rendered welcome", () => {
+  it("renders the real welcome screen to HTML for index.html", () => {
+    const html = renderWelcome();
+    expect(html).toContain("Find your next home in Bengaluru.");
+    expect(html).toContain("HSR Layout");
+    expect(html).toContain('role="dialog"');
+  });
+});

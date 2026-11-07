@@ -41,11 +41,11 @@ export default function Welcome({
     <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/70 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Welcome to EasyHouseHunt">
       <div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center px-4 py-10">
         <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-gray-900 to-gray-950 p-6 shadow-2xl sm:p-10">
-          <button onClick={() => done(onBrowse)} aria-label="Close" className="absolute right-4 top-4 rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white">
+          <button onClick={() => done(onBrowse)} aria-label="Close" className="absolute right-3 top-3 rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white">
             <X className="h-5 w-5" />
           </button>
           <BrandLogo size="md" />
-          <LangSwitch className="mt-4" />
+          <LangSwitch className="mt-5" />
           <h1 className="mt-6 text-3xl font-extrabold leading-tight text-white sm:text-4xl">
             {t("Find your next home in Bengaluru.")}<br />
             <span className="text-orange-400">{t("No brokers. No brokerage.")}</span>
@@ -57,7 +57,7 @@ export default function Welcome({
           <div className="relative mt-6">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
             <input
-              autoFocus={window.innerWidth >= 768}
+              autoFocus={typeof window !== "undefined" && window.innerWidth >= 768}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && matches[0]) done(() => onPickArea(matches[0])); }}

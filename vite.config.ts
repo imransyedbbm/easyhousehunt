@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, isSsrBuild }) => ({
   server: {
     host: "::",
     port: 8080,
@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Split heavy vendors so the first paint doesn't wait on everything.
-        manualChunks: {
+        // (Not for the build-time welcome pre-render, which runs in Node with React external.)
+        manualChunks: isSsrBuild ? undefined : {
           react: ["react", "react-dom"],
           maplibre: ["maplibre-gl"],
           supabase: ["@supabase/supabase-js"],

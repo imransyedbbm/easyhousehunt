@@ -36,6 +36,7 @@ import { rankScore } from "@/lib/quality";
 import { track } from "@/lib/analytics";
 import { SIZE_BANDS } from "@/lib/commercial";
 import Welcome, { shouldShowWelcome } from "@/components/Welcome";
+import { staticWelcomeShown, WELCOME_EVENT, type WelcomeChoice } from "@/components/WelcomeIsland";
 import GrowthMenuItems, { InstallLink } from "@/components/GrowthMenuItems";
 import { LOCALITIES } from "@/data/localities";
 
@@ -95,7 +96,8 @@ function App() {
     bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", occupancy: [], area: initialArea,
     propertyType: initialParams.get("segment") === "commercial" ? "Commercial" : "All",
   });
-  const [welcomeOpen, setWelcomeOpen] = useState(shouldShowWelcome);
+  // If the pre-rendered welcome is on screen, it's handled by WelcomeIsland; don't draw a second one.
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !staticWelcomeShown() && shouldShowWelcome());
   const [filtersKey, setFiltersKey] = useState(0);
 
   async function fetchProperties() {
@@ -324,6 +326,18 @@ function App() {
   }, [detailProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { track("visit"); }, []);
+  // Choices made on the pre-rendered welcome screen.
+  useEffect(() => {
+    const on = (e: Event) => {
+      const c = (e as CustomEvent<WelcomeChoice>).detail;
+      if (c.action === "area") {
+        setFilters((f) => ({ ...f, search: "", area: { name: c.area.name, lat: c.area.lat, lng: c.area.lng } }));
+        setFiltersKey((k) => k + 1);
+      } else if (c.action === "list") handleListProperty();
+    };
+    window.addEventListener(WELCOME_EVENT, on);
+    return () => window.removeEventListener(WELCOME_EVENT, on);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (filters.area?.name) track("area_search", { area: filters.area.name });
   }, [filters.area?.name]);
