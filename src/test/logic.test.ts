@@ -140,3 +140,19 @@ describe("pre-rendered welcome", () => {
     expect(html).toContain('role="dialog"');
   });
 });
+
+import { sizeLabel } from "@/lib/commercial";
+import { fits } from "@/lib/requirements";
+import { flatmateLabel } from "@/lib/flatmate";
+describe("flatmate rooms", () => {
+  const room = { id: "r", title: "Room in HSR", property_type: "Flatmate", occupancy: "Single", bhk: 3, rent: 14000, latitude: 12.9116, longitude: 77.6474, listing_type: "rent" } as any;
+  const req = (t: string) => ({ areas: [{ name: "HSR Layout", lat: 12.9116, lng: 77.6474 }], radius_km: 3, property_type: t, bhk: [2], budget_max: 20000, furnishing: [], move_in: null, tenant_type: null }) as any;
+  it("labels rooms", () => {
+    expect(flatmateLabel(room)).toBe("Private room in 3 BHK");
+    expect(sizeLabel({ ...room, occupancy: "Double" })).toBe("Shared room in 3 BHK");
+  });
+  it("match only requirements that ask for rooms, ignoring flat BHK", () => {
+    expect(fits(req("Flatmate"), room)).toBe(true);
+    expect(fits(req("Any"), room)).toBe(false);
+  });
+});

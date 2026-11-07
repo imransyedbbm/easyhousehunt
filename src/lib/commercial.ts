@@ -15,6 +15,7 @@ export const furnishingOptions = (t?: string | null) => (isCommercial(t) ? COMME
 export function sizeLabel(p: Pick<Property, "property_type" | "bhk" | "occupancy" | "commercial_type">): string | null {
   if (isCommercial(p.property_type)) return p.commercial_type || "Commercial";
   if (p.property_type === "PG") return p.occupancy ? `${p.occupancy} Occupancy` : "PG";
+  if (p.property_type === "Flatmate") return `${p.occupancy && p.occupancy !== "Single" ? "Shared room" : "Private room"}${p.bhk ? ` in ${p.bhk} BHK` : ""}`;
   return p.bhk ? `${p.bhk} BHK` : null;
 }
 

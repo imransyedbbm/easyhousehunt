@@ -1,3 +1,4 @@
+import { isFlatmate, isShared, flatmateLabel, FLATMATE } from "@/lib/flatmate";
 import { useT } from "@/lib/i18n";
 import { COMMERCIAL_TYPES, furnishingOptions, isCommercial } from "@/lib/commercial";
 import { uploadListingPhotos } from "@/lib/photos";
@@ -89,7 +90,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
   const chooseListingType = (t: "rent" | "sale") => {
     if (t === listingType) return;
     setListingType(t);
-    if (t === "sale" && form.property_type === "PG") {
+    if (t === "sale" && isShared(form.property_type)) {
       set("property_type", "Apartment");
       setSelectedProject("");
       setCustomProject("");
@@ -185,13 +186,13 @@ export default function ListingWizard({ onClose, onSuccess }: {
       landlord_id: user.id,
       property_type: form.property_type,
       ...(commercial ? { commercial_type: form.commercial_type } : {}),
-      occupancy: form.property_type === "PG" ? form.occupancy : null,
-      gender_preference: form.property_type === "PG" ? form.gender_preference : null,
+      occupancy: isShared(form.property_type) ? form.occupancy : null,
+      gender_preference: isShared(form.property_type) ? form.gender_preference : null,
       meals_included: form.property_type === "PG" ? form.meals_included === "true" : null,
-      bathroom_type: form.property_type === "PG" ? form.bathroom_type : null,
+      bathroom_type: isShared(form.property_type) ? form.bathroom_type : null,
       ...(listingType === "rent" ? {
         availability_date: availableFrom || null,
-        preferred_tenants: form.property_type === "PG" || commercial ? [] : preferredTenants,
+        preferred_tenants: isShared(form.property_type) || commercial ? [] : preferredTenants,
       } : {}),
     }).select("id").single();
 
@@ -302,10 +303,10 @@ export default function ListingWizard({ onClose, onSuccess }: {
               <div>
                 <label className="text-sm text-gray-400">{t("Property Type *")}</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
-                  {["Apartment", "Independent House", "PG", "Commercial"].filter(t => !(listingType === "sale" && t === "PG")).map(t => (
+                  {["Apartment", "Independent House", "PG", FLATMATE, "Commercial"].filter(t => !(listingType === "sale" && isShared(t))).map(t => (
                     <button key={t} onClick={() => chooseType(t)}
                       className={`py-2 rounded-lg text-sm font-medium border ${form.property_type === t ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-800 border-gray-600 text-gray-300"}`}>
-                      {t === "Commercial" ? "🏢 Commercial" : t}
+                      {t === "Commercial" ? "🏢 Commercial" : t === FLATMATE ? "🛏️ Room / Flatmate" : t}
                     </button>
                   ))}
                 </div>
@@ -364,6 +365,14 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 </>
               )}
 
+              {isFlatmate(form.property_type) && (
+                <div>
+                  <label className="text-sm text-gray-400">Listing Title *</label>
+                  <input className={inp + " mt-1"} placeholder="e.g. Private room in 3BHK, HSR Sector 2" value={customProject} onChange={e => setCustomProject(e.target.value)} />
+                  <p className="mt-1 text-xs text-gray-500">Living in a flat and looking for a flatmate? List your spare room here.</p>
+                </div>
+              )}
+
               {form.property_type === "Independent House" && (
                 <div>
                   <label className="text-sm text-gray-400">Listing Title *</label>
@@ -403,7 +412,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
           {step === 2 && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm text-gray-400">{listingType === "sale" ? t("Asking price (₹) *") : t("Monthly Rent (₹) *")}</label>
+                <label className="text-sm text-gray-400">{listingType === "sale" ? t("Asking price (₹) *") : isShared(form.property_type) ? "Rent per person (₹/month) *" : t("Monthly Rent (₹) *")}</label>
                 <input type="number" className={inp + " mt-1"} placeholder={listingType === "sale" ? "e.g. 8500000" : "e.g. 35000"} value={form.rent} onChange={e => set("rent", e.target.value)} />
                 {listingType === "sale" && Number(form.rent) > 0 && (
                   <p className="mt-1 text-xs text-green-400">{formatSalePrice(Number(form.rent))}</p>
@@ -424,7 +433,23 @@ export default function ListingWizard({ onClose, onSuccess }: {
                 {listingType === "rent" && <input type="number" className={inp + " mt-1"} placeholder="e.g. 100000" value={form.deposit} onChange={e => set("deposit", e.target.value)} />}
               </div>
               <div>
-                {commercial ? null : form.property_type === "PG" ? (
+                {commercial ? null : isFlatmate(form.property_type) ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-sm text-gray-400">Room *</label>
+                      <select className={inp + " mt-1"} value={form.occupancy === "Single" ? "Single" : "Double"} onChange={e => set("occupancy", e.target.value)}>
+                        <option value="Single">Private room</option>
+                        <option value="Double">Shared room</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-400">Flat size *</label>
+                      <select className={inp + " mt-1"} value={form.bhk} onChange={e => set("bhk", e.target.value)}>
+                        {["1","2","3","4","5"].map(n => <option key={n} value={n}>{n} BHK</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ) : form.property_type === "PG" ? (
                   <>
                     <label className="text-sm text-gray-400">{t("Occupancy *")}</label>
                     <select className={inp + " mt-1"} value={form.occupancy} onChange={e => set("occupancy", e.target.value)}>
@@ -475,7 +500,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   </div>
                 </div>
               )}
-              {listingType === "rent" && form.property_type !== "PG" && !commercial && (
+              {listingType === "rent" && !isShared(form.property_type) && !commercial && (
                 <div>
                   <label className="text-sm text-gray-400">Preferred tenants <span className="text-gray-500 text-xs">(leave empty for anyone)</span></label>
                   <div className="flex gap-2 mt-2 flex-wrap">
@@ -488,7 +513,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                   </div>
                 </div>
               )}
-              {form.property_type === "PG" && (
+              {isShared(form.property_type) && (
                 <div className="space-y-3">
                   <div>
                     <label className="text-sm text-gray-400">Gender Preference</label>
@@ -512,7 +537,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                       ))}
                     </div>
                   </div>
-                  <div>
+                  {form.property_type === "PG" && (<div>
                     <label className="text-sm text-gray-400">Meals Included</label>
                     <div className="flex gap-2 mt-2">
                       {[["true","Yes ✓"],["false","No ✗"]].map(([val, label]) => (
@@ -522,7 +547,7 @@ export default function ListingWizard({ onClose, onSuccess }: {
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </div>)}
                 </div>
               )}
               <div>

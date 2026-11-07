@@ -153,7 +153,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
       };
       // Only send the new fields if the database has them (keeps older databases working).
       if ("availability_date" in orig) next.availability_date = availableFrom || null;
-      if ("preferred_tenants" in orig) next.preferred_tenants = orig.property_type === "PG" || isCommercial(orig.property_type) ? [] : preferredTenants;
+      if ("preferred_tenants" in orig) next.preferred_tenants = orig.property_type === "PG" || orig.property_type === "Flatmate" || isCommercial(orig.property_type) ? [] : preferredTenants;
       if (isCommercial(orig.property_type) && "commercial_type" in orig) next.commercial_type = commercialType || null;
 
       // only send what actually changed
@@ -283,7 +283,7 @@ export default function EditListingModal({ listing, onClose, onSaved, adminMode 
                   </div>
                 </div>
               )}
-              {orig?.listing_type !== "sale" && orig?.property_type !== "PG" && !isCommercial(orig?.property_type) && (
+              {orig?.listing_type !== "sale" && orig?.property_type !== "PG" && orig?.property_type !== "Flatmate" && !isCommercial(orig?.property_type) && (
                 <div>
                   <label className="text-xs text-gray-400">Preferred tenants (none = anyone)</label>
                   <div className="flex gap-2 mt-1 flex-wrap">

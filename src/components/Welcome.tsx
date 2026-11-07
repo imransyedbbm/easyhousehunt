@@ -87,6 +87,8 @@ export default function Welcome({
             ))}
           </div>
 
+          <a href="/?segment=rooms" onClick={() => { try { localStorage.setItem(KEY, "1"); } catch { /* private mode */ } }} className="mt-3 inline-block text-sm text-orange-300 hover:text-orange-200">🛏️ {t("Looking for a room or flatmate?")} →</a>
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button onClick={() => done(onBrowse)}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3.5 font-semibold text-white hover:bg-orange-600">

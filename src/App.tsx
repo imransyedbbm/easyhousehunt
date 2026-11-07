@@ -94,7 +94,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     bhk: [], minRent: 0, maxRent: 99999999, furnishing: [], search: "", occupancy: [], area: initialArea,
-    propertyType: initialParams.get("segment") === "commercial" ? "Commercial" : "All",
+    propertyType: initialParams.get("segment") === "commercial" ? "Commercial" : initialParams.get("segment") === "rooms" ? "Flatmate" : "All",
   });
   // If the pre-rendered welcome is on screen, it's handled by WelcomeIsland; don't draw a second one.
   const [welcomeOpen, setWelcomeOpen] = useState(() => !staticWelcomeShown() && shouldShowWelcome());
@@ -106,7 +106,7 @@ function App() {
       const CORE = ["id", "title", "rent", "bhk", "address", "latitude", "longitude", "deposit", "furnishing", "area_sqft", "description", "amenities", "media_urls", "landlord_id", "property_type", "occupancy", "is_sample", "listing_type", "sale_price"];
       // Newer columns: if the database doesn't have one yet, drop just that column and retry,
       // so one missing column can never blank the map.
-      let optional = ["featured_until", "is_verified", "created_at", "availability", "availability_date", "preferred_tenants", "share_code", "commercial_type", "confirmed_at"];
+      let optional = ["gender_preference", "bathroom_type", "featured_until", "is_verified", "created_at", "availability", "availability_date", "preferred_tenants", "share_code", "commercial_type", "confirmed_at"];
       const query = (cols: string[]) => {
         let q = supabase
           .from("properties")
@@ -186,6 +186,8 @@ function App() {
         availability_date: p.availability_date ?? null,
         confirmed_at: p.confirmed_at ?? null,
         featured_until: p.featured_until ?? null,
+        gender_preference: p.gender_preference ?? null,
+        bathroom_type: p.bathroom_type ?? null,
         preferred_tenants: p.preferred_tenants ?? [],
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,

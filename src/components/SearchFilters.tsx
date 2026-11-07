@@ -126,7 +126,7 @@ export default function SearchFilters({
       minRent: 0,
       maxRent: NO_MAX_RENT,
       occupancy: [],
-      propertyType: m === "sale" && filters.propertyType === "PG" ? "All" : filters.propertyType,
+      propertyType: m === "sale" && (filters.propertyType === "PG" || filters.propertyType === "Flatmate") ? "All" : filters.propertyType,
     });
   };
 
@@ -329,7 +329,7 @@ export default function SearchFilters({
           {segment === "Homes" && <div>
             <p className="text-xs text-gray-400 mb-2">Property Type</p>
             <div className="flex gap-2">
-              {["Homes", "Apartment", "PG", "Independent House"].filter((t) => !(isSaleMode && t === "PG")).map((t) => (
+              {["Homes", "Apartment", "PG", "Flatmate", "Independent House"].filter((t) => !(isSaleMode && (t === "PG" || t === "Flatmate"))).map((t) => (
                 <button
                   key={t}
                   onClick={() => update({ propertyType: t, commercialType: [], ...(t === "Commercial" || filters.propertyType === "Commercial" ? { bhk: [], furnishing: [] } : {}) })}
@@ -339,7 +339,7 @@ export default function SearchFilters({
                       : "bg-gray-800 border-gray-600 text-gray-300"
                   }`}
                 >
-                  {t === "Independent House" ? "House" : t === "Homes" ? "All homes" : t}
+                  {t === "Independent House" ? "House" : t === "Homes" ? "All homes" : t === "Flatmate" ? "Rooms" : t}
                 </button>
               ))}
             </div>

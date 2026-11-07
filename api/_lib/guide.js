@@ -2,11 +2,12 @@
 import { esc, inr } from "./page.js";
 
 const GROUPS = [
-  ["1 BHK", (h) => h.property_type !== "PG" && h.property_type !== "Commercial" && Number(h.bhk) === 1],
-  ["2 BHK", (h) => h.property_type !== "PG" && h.property_type !== "Commercial" && Number(h.bhk) === 2],
-  ["3 BHK", (h) => h.property_type !== "PG" && h.property_type !== "Commercial" && Number(h.bhk) === 3],
-  ["4+ BHK", (h) => h.property_type !== "PG" && h.property_type !== "Commercial" && Number(h.bhk) >= 4],
+  ["1 BHK", (h) => !["PG", "Commercial", "Flatmate"].includes(h.property_type) && Number(h.bhk) === 1],
+  ["2 BHK", (h) => !["PG", "Commercial", "Flatmate"].includes(h.property_type) && Number(h.bhk) === 2],
+  ["3 BHK", (h) => !["PG", "Commercial", "Flatmate"].includes(h.property_type) && Number(h.bhk) === 3],
+  ["4+ BHK", (h) => !["PG", "Commercial", "Flatmate"].includes(h.property_type) && Number(h.bhk) >= 4],
   ["PG / co-living", (h) => h.property_type === "PG"],
+  ["Room in shared flat", (h) => h.property_type === "Flatmate"],
   ["Office / commercial", (h) => h.property_type === "Commercial"],
 ];
 

@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/price";
 import { Area, Requirement, RequirementInput, TENANT_TYPES, availabilityLabel, fits, useMyRequirements } from "@/lib/requirements";
 import type { Property } from "@/types/property";
 
-const TYPES = ["Any", "Apartment", "Independent House", "PG", "Commercial"] as const;
+const TYPES = ["Any", "Apartment", "Independent House", "PG", "Flatmate", "Commercial"] as const;
 const BHKS = [1, 2, 3, 4];
 const RADII = [1, 2, 3, 5, 8];
 
@@ -221,7 +221,7 @@ function RequirementForm({ initial, properties, canCancel, onCancel, onSave }: {
               onClick={() => setF((x) => ({ ...x, property_type: t, ...((t === "Commercial") !== (x.property_type === "Commercial") ? { furnishing: [], bhk: [], tenant_type: null } : {}) }))}
               className={chip(f.property_type === t)}>{t === "Independent House" ? "House" : t === "Any" ? "Any home" : t === "Commercial" ? "🏢 Commercial" : t}</button>)}
           </div>
-          {f.property_type !== "PG" && f.property_type !== "Commercial" && (
+          {!["PG", "Commercial", "Flatmate"].includes(f.property_type) && (
             <div className="flex gap-2 mt-2 flex-wrap">
               {BHKS.map((b) => <button key={b} onClick={() => set("bhk", toggle(f.bhk, b))} className={chip(f.bhk.includes(b))}>{b === 4 ? "4+" : b} BHK</button>)}
             </div>

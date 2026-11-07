@@ -1,3 +1,4 @@
+import { isFlatmate, flatmateLabel } from "@/lib/flatmate";
 import { isFeatured } from "@/lib/featured";
 import { Property } from "../../types/property";
 import { formatDistance, isNewListing } from "@/lib/geo";
@@ -71,6 +72,8 @@ export default function PropertyList({ properties, onSelect }: Props) {
           <p className="text-green-400 font-bold">{formatPrice(p)}{rentPerSqft(p) && <span className="ml-1.5 text-xs font-normal text-gray-400">{rentPerSqft(p)}</span>}</p>
           {p.property_type === "Commercial" ? (
             <p className="text-gray-300 text-xs">🏢 {p.commercial_type || "Commercial"}{p.area_sqft ? ` · ${p.area_sqft.toLocaleString("en-IN")} sq ft` : ""}{seatEstimate(p) ? ` · fits ~${seatEstimate(p)} seats` : ""}</p>
+          ) : isFlatmate(p.property_type) ? (
+            <p className="text-gray-300 text-xs">🛏️ {flatmateLabel(p)}{p.gender_preference && p.gender_preference !== "Any" ? ` · ${p.gender_preference}` : ""}</p>
           ) : p.property_type === "PG" ? (
             <p className="text-gray-300 text-xs">PG · {p.occupancy || "Single"} Occupancy</p>
           ) : p.bhk ? (

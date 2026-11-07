@@ -6,7 +6,7 @@ export const isUuid = (s: string) => UUID.test(s);
 
 /** "2bhk-karle-vario-homes" — readable part of the link (never used for lookup). */
 export function listingSlug(p: Pick<Property, "title" | "bhk" | "property_type">) {
-  const size = p.property_type === "PG" ? "pg" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
+  const size = p.property_type === "PG" ? "pg" : p.property_type === "Flatmate" ? "room" : p.property_type === "Commercial" ? "commercial" : p.bhk ? `${p.bhk}bhk` : "";
   return [size, p.title || "home"].join(" ")
     .toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "");
 }

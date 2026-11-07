@@ -198,3 +198,12 @@ describe("missing columns", () => {
     expect(r.body).toContain("Prestige Sunrise Park");
   });
 });
+
+describe("rooms on public pages", () => {
+  it("get their own rent-guide row and a 'room' link slug", async () => {
+    const { rentStats } = await import("../../api/_lib/guide.js");
+    const s = rentStats([{ property_type: "Flatmate", bhk: 3, rent: 14000, listing_type: "rent" }, { bhk: 3, rent: 60000, listing_type: "rent" }]);
+    expect(s.map((x: any) => x.label)).toEqual(["3 BHK", "Room in shared flat"]);
+    expect(listingPath({ title: "Cosy room", property_type: "Flatmate", share_code: "rmm234" })).toBe("/l/room-cosy-room-rmm234");
+  });
+});
