@@ -1,10 +1,10 @@
 // Office & commercial space pages: /office-space and /office-space/<area-or-tech-park>.
 // Server-rendered for search ("office space for rent in Koramangala"), with ₹/sq ft guide and FAQ.
-import { SITE, esc, sb, layout, tile, distanceKm, inr } from "./_lib/page.js";
+import { SITE, esc, sb, layout, tile, featuredFirst, distanceKm, inr } from "./_lib/page.js";
 import { LOCALITIES } from "./_lib/localities.js";
 
 const RADIUS_KM = 3;
-const FIELDS = "id,title,bhk,rent,sale_price,listing_type,property_type,commercial_type,occupancy,address,media_urls,share_code,latitude,longitude,availability,area_sqft";
+const FIELDS = "id,title,bhk,rent,sale_price,listing_type,property_type,commercial_type,occupancy,address,media_urls,share_code,latitude,longitude,availability,area_sqft,featured_until";
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
 /** ₹/sq ft/month by kind of space, from live commercial rentals that state their size. */
@@ -92,7 +92,7 @@ ${f.html}</main>`,
 <h1>Office space for rent in ${esc(area.name)}</h1>
 <p class="muted">${near.length ? `${near.length} space${near.length > 1 ? "s" : ""} within ${RADIUS_KM} km, listed directly by owners.` : `No commercial spaces within ${RADIUS_KM} km of ${esc(area.name)} yet.`}</p>
 <p style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-o" href="${SITE}/?segment=commercial&area=${encodeURIComponent(area.slug)}">See them on the map</a><a class="btn btn-d" href="/?requirement=1">Post an office requirement</a></p>
-${near.length ? `<div class="grid">${near.map(tile).join("")}</div>` : ""}
+${near.length ? `<div class="grid">${featuredFirst(near).map(tile).join("")}</div>` : ""}
 ${guide(stats, area.name)}
 ${f.html}
 <h2>Nearby</h2><div class="links">${nearby.map((l) => `<a href="/office-space/${esc(l.slug)}">${esc(l.name)}</a>`).join("")}</div>

@@ -7,6 +7,8 @@ export type Property = {
   availability_date?: string | null;
   /** Last time the owner confirmed the listing is still available. */
   confirmed_at?: string | null;
+  /** Paid/admin boost: shown first with a Featured badge until this time. */
+  featured_until?: string | null;
   preferred_tenants?: string[] | null;
   availability?: "available" | "reserved" | "let_out" | string | null;
   distance_m?: number | null;

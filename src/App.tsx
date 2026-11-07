@@ -1,3 +1,4 @@
+import { isFeatured } from "@/lib/featured";
 import LangSwitch from "@/components/LangSwitch";
 import { useT } from "@/lib/i18n";
 import { linkKey } from "@/lib/share";
@@ -103,7 +104,7 @@ function App() {
       const CORE = ["id", "title", "rent", "bhk", "address", "latitude", "longitude", "deposit", "furnishing", "area_sqft", "description", "amenities", "media_urls", "landlord_id", "property_type", "occupancy", "is_sample", "listing_type", "sale_price"];
       // Newer columns: if the database doesn't have one yet, drop just that column and retry,
       // so one missing column can never blank the map.
-      let optional = ["is_verified", "created_at", "availability", "availability_date", "preferred_tenants", "share_code", "commercial_type", "confirmed_at"];
+      let optional = ["featured_until", "is_verified", "created_at", "availability", "availability_date", "preferred_tenants", "share_code", "commercial_type", "confirmed_at"];
       const query = (cols: string[]) => {
         let q = supabase
           .from("properties")
@@ -182,6 +183,7 @@ function App() {
         availability: p.availability ?? "available",
         availability_date: p.availability_date ?? null,
         confirmed_at: p.confirmed_at ?? null,
+        featured_until: p.featured_until ?? null,
         preferred_tenants: p.preferred_tenants ?? [],
         listing_type: p.listing_type ?? "rent",
         sale_price: p.sale_price ?? null,
@@ -264,8 +266,8 @@ function App() {
     userLoc && !focus
       ? [...withDistance].sort((a, b) => (a.distance_m ?? Infinity) - (b.distance_m ?? Infinity))
       : focus
-        ? withDistance
-        : [...withDistance].sort((a, b) => Number(!!a.is_sample) - Number(!!b.is_sample) || rankScore(b) - rankScore(a));
+        ? [...withDistance].sort((a, b) => Number(isFeatured(b)) - Number(isFeatured(a)))   // stable: featured first, then nearest
+        : [...withDistance].sort((a, b) => Number(!!a.is_sample) - Number(!!b.is_sample) || Number(isFeatured(b)) - Number(isFeatured(a)) || rankScore(b) - rankScore(a));
 
   // Real listings first; labelled samples after them
   const filteredProperties: Property[] = [

@@ -10,12 +10,21 @@ export function env() {
   };
 }
 
-export async function sb(path) {
+export async function sb(path, attempt = 0) {
   const { url, key } = env();
   if (!url || !key) return null;
   try {
     const r = await fetch(`${url}/rest/v1/${path}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
-    return r.ok ? await r.json() : null;
+    if (r.ok) return await r.json();
+    // A column the database doesn't have yet (migration not run): drop it from select= and retry,
+    // so one missing column never blanks a public page.
+    const msg = await r.text().catch(() => "");
+    const col = msg.match(/column [a-z_]+\.([a-z_]+) does not exist/)?.[1];
+    if (col && attempt < 3 && /[?&]select=/.test(path)) {
+      const next = path.replace(/([?&]select=)([^&]*)/, (_, a, list) => a + list.split(",").filter((c) => c !== col).join(","));
+      if (next !== path) return sb(next, attempt + 1);
+    }
+    return null;
   } catch { return null; }
 }
 
@@ -107,8 +116,12 @@ ${body}
 </body></html>`;
 }
 
+export const featured = (p) => !!p.featured_until && new Date(p.featured_until).getTime() > Date.now();
+/** Featured first, otherwise keep the given order. */
+export const featuredFirst = (xs) => [...xs].sort((a, b) => Number(featured(b)) - Number(featured(a)));
+
 export function tile(p) {
   const ph = photos(p)[0];
   return `<a class="tile" href="${esc(listingPath(p))}">${ph ? `<img src="${esc(ph)}" alt="${esc(p.title)}" loading="lazy">` : `<div class="ph"></div>`}
-<div><b>${esc(sizeLabel(p))} · ${esc(p.title || "Home")}</b><span class="p">${esc(priceLabel(p))}</span><br><span class="muted" style="font-size:13px">${esc((p.address || "").split(",").slice(0, 2).join(","))}</span></div></a>`;
+<div>${featured(p) ? '<span style="display:inline-block;background:#facc15;color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;margin-bottom:4px">★ FEATURED</span>' : ""}<b>${esc(sizeLabel(p))} · ${esc(p.title || "Home")}</b><span class="p">${esc(priceLabel(p))}</span><br><span class="muted" style="font-size:13px">${esc((p.address || "").split(",").slice(0, 2).join(","))}</span></div></a>`;
 }

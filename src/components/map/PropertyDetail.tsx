@@ -1,3 +1,4 @@
+import { isFeatured } from "@/lib/featured";
 import { useT } from "@/lib/i18n";
 import { shareListing, whatsappShareUrl } from "@/lib/share";
 import { availabilityLabel } from "@/lib/requirements";
@@ -168,6 +169,9 @@ export default function PropertyDetail({
             <span className="bg-teal-900/60 text-teal-200 px-3 py-1 rounded-full text-sm">
               📅 {availabilityLabel(property.availability_date)}
             </span>
+          )}
+          {isFeatured(property) && (
+            <span className="bg-yellow-400/20 text-yellow-200 px-3 py-1 rounded-full text-sm">★ {t("Featured")}</span>
           )}
           {!property.is_sample && isNewListing(property.created_at) && (
             <span className="inline-flex items-center gap-1 bg-orange-500/20 text-orange-200 px-3 py-1 rounded-full text-sm">

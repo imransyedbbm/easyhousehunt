@@ -7,8 +7,9 @@ import { toast } from "sonner";
 import { BadgeCheck, TrendingUp, TrendingDown } from "lucide-react";
 import AdminInsights from "@/components/AdminInsights";
 import BulkImport from "@/components/BulkImport";
+import { BOOST_PLANS, isFeatured, featuredUntil } from "@/lib/featured";
 
-type Tab = "pending" | "insights" | "import" | "reports" | "listings" | "messages" | "users" | "demand";
+type Tab = "pending" | "insights" | "import" | "boosts" | "reports" | "listings" | "messages" | "users" | "demand";
 
 const REPORT_LABEL: Record<string, string> = {
   let_out: "Already let out / sold", wrong_details: "Wrong details", broker: "Broker posing as owner", fake: "Fake / scam", other: "Other",
@@ -36,6 +37,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [editListing, setEditListing] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reports, setReports] = useState<any[]>([]);
+  const [boosts, setBoosts] = useState<any[]>([]);
   const [weekly, setWeekly] = useState<{ metric: string; this_week: number; last_week: number }[]>([]);
   const [market, setMarket] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -48,7 +50,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
     const { data: props, error: pErr } = await supabase
       .from("properties")
-      .select("id, title, rent, bhk, address, created_at, landlord_id, latitude, longitude, market, status, rejection_reason, reviewed_at, property_type, furnishing, deposit, description, media_urls, listing_type, sale_price, is_verified")
+      .select("id, title, rent, bhk, address, created_at, landlord_id, latitude, longitude, market, status, rejection_reason, reviewed_at, property_type, furnishing, deposit, description, media_urls, listing_type, sale_price, is_verified, featured_until")
       .order("created_at", { ascending: false })
       .limit(300);
     if (pErr) setLoadError(pErr.message);
@@ -82,6 +84,8 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       .order("created_at", { ascending: false })
       .limit(200);
     setReports(reps || []);
+    const { data: bst } = await (supabase as any).from("boost_requests").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(100);
+    setBoosts(bst || []);
     const { data: wk } = await (supabase as any).rpc("admin_weekly_stats");
     setWeekly(wk || []);
 
@@ -171,6 +175,24 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     toast.success(next ? "Marked as verified owner" : "Verified badge removed");
   };
 
+  const setFeatured = async (l: any, days: number | null) => {
+    const until = days ? featuredUntil(days, isFeatured(l) ? new Date(l.featured_until) : new Date()) : null;
+    const { data, error } = await (supabase as any).from("properties").update({ featured_until: until }).eq("id", l.id).select("id");
+    if (error || !data?.length) { toast.error("Couldn't update: " + (error?.message ?? "no permission")); return false; }
+    setListings((prev) => prev.map((x) => (x.id === l.id ? { ...x, featured_until: until } : x)));
+    toast.success(days ? `Featured until ${new Date(until!).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "No longer featured");
+    return true;
+  };
+
+  const closeBoost = async (b: any, status: "done" | "declined") => {
+    if (status === "done") {
+      const l = listings.find((x) => x.id === b.property_id);
+      if (!l || !(await setFeatured(l, b.plan_days))) return;
+    }
+    await (supabase as any).from("boost_requests").update({ status }).eq("id", b.id);
+    setBoosts((prev) => prev.filter((x) => x.id !== b.id));
+  };
+
   const closeReports = async (propertyId: string, status: "resolved" | "dismissed") => {
     const { error } = await (supabase as any).from("listing_reports")
       .update({ status, resolved_at: new Date().toISOString() })
@@ -195,6 +217,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     { key: "pending", label: "Pending", count: stats.pending },
     { key: "insights", label: "Insights", count: "📈" as any },
     { key: "reports", label: "Reports", count: reports.length },
+    { key: "boosts", label: "Boosts", count: boosts.length },
     { key: "import", label: "Import", count: "CSV" as any },
     { key: "listings", label: "Listings", count: listings.length },
     { key: "messages", label: "Messages", count: stats.messages },
@@ -295,6 +318,18 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 mt-3">
+          {l.status === "approved" && (
+            isFeatured(l) ? (
+              <button onClick={() => setFeatured(l, null)} title={`Featured until ${new Date(l.featured_until).toLocaleDateString("en-IN")}`}
+                className="px-3 py-2 rounded-lg text-sm font-semibold bg-yellow-400 text-black hover:bg-yellow-300">★ Unfeature</button>
+            ) : (
+              <select defaultValue="" onChange={(e) => { if (e.target.value) setFeatured(l, Number(e.target.value)); e.target.value = ""; }}
+                className="px-2 py-2 rounded-lg text-sm bg-gray-700 text-white" aria-label="Feature this listing">
+                <option value="" disabled>★ Feature…</option>
+                {BOOST_PLANS.map((p) => <option key={p.days} value={p.days}>{p.label}</option>)}
+              </select>
+            )
+          )}
           <button
             onClick={() => toggleVerified(l)}
             title="Only after you've checked the owner (call / ID / property papers)"
@@ -431,6 +466,28 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                 ))}
 
               {tab === "insights" && <AdminInsights listings={listings} />}
+              {tab === "boosts" && (boosts.length === 0 ? (
+                <div className="text-center py-12 text-gray-400"><p className="text-4xl mb-2">🚀</p><p>No boost requests</p></div>
+              ) : boosts.map((b) => {
+                const l = listings.find((x) => x.id === b.property_id);
+                const plan = BOOST_PLANS.find((p) => p.days === b.plan_days);
+                return (
+                  <div key={b.id} className="space-y-2">
+                    <div className="rounded-xl border border-yellow-700/60 bg-yellow-950/30 p-3 text-sm">
+                      <p className="font-semibold text-yellow-100">{plan?.label} boost · ₹{plan?.price}</p>
+                      <p className="text-xs text-yellow-200/80">
+                        Owner: {ownerEmail[b.owner_id] || "—"}{b.phone ? ` · ${b.phone}` : ""} · requested {new Date(b.created_at).toLocaleDateString("en-IN")}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button onClick={() => closeBoost(b, "done")} className="rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-black hover:bg-yellow-300">Paid · activate {plan?.label}</button>
+                        <button onClick={() => closeBoost(b, "declined")} className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700">Decline</button>
+                      </div>
+                    </div>
+                    {l ? renderListing(l) : <p className="text-xs text-gray-500">Listing not in the latest 300.</p>}
+                  </div>
+                );
+              }))}
+
               {tab === "import" && <BulkImport onDone={() => { fetchAll(); setTab("listings"); }} />}
 
               {tab === "reports" && (() => {

@@ -1,11 +1,11 @@
 // Area pages: https://easyhousehunt.com/rent/koramangala — homes for rent near a Bengaluru locality.
 // /rent (no area) lists every area. Server-rendered for search engines; links into the map.
-import { SITE, esc, sb, layout, tile, distanceKm } from "./_lib/page.js";
+import { SITE, esc, sb, layout, tile, featuredFirst, distanceKm } from "./_lib/page.js";
 import { LOCALITIES } from "./_lib/localities.js";
 import { rentStats, rentTable, areaFaq } from "./_lib/guide.js";
 
 const RADIUS_KM = 2.5;
-const FIELDS = "id,title,bhk,rent,sale_price,listing_type,property_type,commercial_type,occupancy,address,media_urls,share_code,latitude,longitude,availability";
+const FIELDS = "id,title,bhk,rent,sale_price,listing_type,property_type,commercial_type,occupancy,address,media_urls,share_code,latitude,longitude,availability,featured_until";
 const ALL_FIELDS = "bhk,rent,listing_type,property_type,latitude,longitude,availability";
 
 export default async function handler(req, res) {
@@ -47,6 +47,7 @@ ${top.length ? `<h2>Areas with the most homes</h2><div class="links">${top.map((
     .filter((p) => p.availability !== "let_out")
     .map((p) => ({ p, km: distanceKm(area, { lat: p.latitude, lng: p.longitude }) }))
     .filter((x) => x.km <= RADIUS_KM).sort((a, b) => a.km - b.km).map((x) => x.p);
+  const shown = featuredFirst(homes);
 
   const nearby = LOCALITIES.filter((l) => l.slug !== slug).map((l) => ({ l, km: distanceKm(area, l) }))
     .sort((a, b) => a.km - b.km).slice(0, 12).map((x) => x.l);
@@ -70,7 +71,7 @@ ${top.length ? `<h2>Areas with the most homes</h2><div class="links">${top.map((
 <h1>Homes for rent in ${esc(area.name)}</h1>
 <p class="muted">${count ? `${count} ${count === 1 ? "home" : "homes"} within ${RADIUS_KM} km, listed directly by owners.${range}` : `No homes listed within ${RADIUS_KM} km of ${esc(area.name)} yet.`}</p>
 <p><a class="btn btn-o" href="${esc(mapUrl)}">Explore ${esc(area.name)} on the map</a></p>
-${count ? `<div class="grid">${homes.map(tile).join("")}</div>` : `<div class="card" style="position:static;margin-top:16px"><b>Tell us what you need</b><p class="muted">Post your requirement and we'll email you when a matching home in ${esc(area.name)} is listed.</p><a class="btn btn-o" href="/?requirement=1">Post requirement</a></div>`}
+${count ? `<div class="grid">${shown.map(tile).join("")}</div>` : `<div class="card" style="position:static;margin-top:16px"><b>Tell us what you need</b><p class="muted">Post your requirement and we'll email you when a matching home in ${esc(area.name)} is listed.</p><a class="btn btn-o" href="/?requirement=1">Post requirement</a></div>`}
 ${rentTable(stats, area.name)}
 ${faq.html}
 <h2>Nearby areas</h2><div class="links">${nearby.map((l) => `<a href="/rent/${esc(l.slug)}">${esc(l.name)}</a>`).join("")}</div>
