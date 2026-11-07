@@ -50,10 +50,14 @@ npm run dev            # http://localhost:8080
 | `notify-matches` | Requirement match + price-drop alerts | |
 | `owner-reminders` | Weekly "still available?" emails | Deploy with JWT verification **off**; called by pg_cron |
 | `gemini-proxy` | AI helper proxy | |
+| `listing-writer` | AI listing descriptions (10/user/day) | JWT on |
+| `notify-visit` | Site-visit emails | JWT on |
+| `send-push` | Push notifications for new messages | JWT off; called by a DB trigger |
+| `weekly-digest` | Saturday "new homes for you" email + one-click unsubscribe | JWT off; called by pg_cron |
 
 **Secrets:** `RESEND_API_KEY`, `EMAIL_FROM`, `SITE_URL`, `CRON_SECRET`; optional `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE`, `WHATSAPP_TEMPLATE_LANG`.
 
-**Scheduled job:** `owner-reminders-weekly` (pg_cron, Mondays 10:00 IST); needs `pg_cron` and `pg_net` enabled. See the bottom of `20261106120000_owner_reminders.sql`. Test without sending: call the function with `?dry=1`.
+**Scheduled jobs:** `owner-reminders-weekly` (pg_cron, Mondays 10:00 IST) and `weekly-digest` (Saturdays 10:00 IST); needs `pg_cron` and `pg_net` enabled. See the bottom of `20261106120000_owner_reminders.sql`. Test without sending: call the function with `?dry=1`.
 
 **Insights tables:** `listing_views` (one row per listing/visitor/day, no personal data) and `listing_tokens` (secret email-button tokens). Both have RLS on with no policies and are only reached through `SECURITY DEFINER` functions.
 
