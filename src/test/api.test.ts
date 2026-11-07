@@ -166,3 +166,35 @@ describe("office space pages", () => {
     expect(r.body).toContain("/office-space/koramangala");
   });
 });
+
+describe("featured listings", () => {
+  it("are shown first with a badge on area pages", async () => {
+    const { default: h } = await import("../../api/rent.js");
+    const soon = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    rows = [{ ...HOME, id: "a", title: "Nearest plain home", share_code: "aaa234" },
+            { ...HOME, id: "b", title: "Boosted home", share_code: "bbb234", latitude: 12.94, featured_until: soon }];
+    const r = res(); await h({ query: { area: "koramangala" } }, r);
+    expect(r.body.indexOf("Boosted home")).toBeLessThan(r.body.indexOf("Nearest plain home"));
+    expect(r.body).toContain("★ FEATURED");
+  });
+  it("expire", async () => {
+    const { featured } = await import("../../api/_lib/page.js");
+    expect(featured({ featured_until: new Date(Date.now() - 1000).toISOString() })).toBe(false);
+  });
+});
+
+describe("missing columns", () => {
+  it("public pages retry without a column the database doesn't have", async () => {
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      seen.push(String(url));
+      if (String(url).includes("featured_until")) return { ok: false, text: async () => '{"message":"column properties.featured_until does not exist"}', json: async () => ({}) };
+      return { ok: true, json: async () => [HOME] };
+    });
+    const { default: h } = await import("../../api/rent.js");
+    const r = res(); await h({ query: { area: "koramangala" } }, r);
+    expect(seen.length).toBe(2);
+    expect(seen[1]).not.toContain("featured_until");
+    expect(r.body).toContain("Prestige Sunrise Park");
+  });
+});

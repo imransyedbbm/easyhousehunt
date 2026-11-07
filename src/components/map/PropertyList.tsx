@@ -1,3 +1,4 @@
+import { isFeatured } from "@/lib/featured";
 import { Property } from "../../types/property";
 import { formatDistance, isNewListing } from "@/lib/geo";
 import SaveButton from "@/components/SaveButton";
@@ -44,7 +45,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
           className={`relative p-4 rounded-lg cursor-pointer transition-colors ${
             p.is_sample
               ? "bg-gray-800/60 border border-dashed border-gray-600 hover:bg-gray-800"
-              : "bg-gray-800 hover:bg-gray-700"
+              : isFeatured(p)
+                ? "bg-gray-800 hover:bg-gray-700 ring-1 ring-yellow-400/60"
+                : "bg-gray-800 hover:bg-gray-700"
           }`}
         >
           {!p.is_sample && <SaveButton propertyId={p.id} size="sm" className="absolute right-2 top-2" />}
@@ -57,6 +60,9 @@ export default function PropertyList({ properties, onSelect }: Props) {
             <span className="mb-1 ml-1 inline-block rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-yellow-300">
               RESERVED · DEAL IN PROGRESS
             </span>
+          )}
+          {isFeatured(p) && (
+            <span className="mb-1 mr-1 inline-block rounded bg-yellow-400 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-black">★ FEATURED</span>
           )}
           {!p.is_sample && isNewListing(p.created_at) && (
             <span className="mb-1 mr-1 inline-block rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">NEW</span>

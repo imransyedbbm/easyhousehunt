@@ -15,6 +15,7 @@ import { useListingStats, daysSince, confirmListing, setLetOut, STALE_DAYS } fro
 import { whatsappShareUrl } from "@/lib/share";
 import { listingQuality } from "@/lib/quality";
 import VisitsPanel from "@/components/VisitsPanel";
+import BoostListing from "@/components/BoostListing";
 import { loadVisits } from "@/lib/visits";
 
 type Tab = "messages" | "visits" | "listings" | "saved";
@@ -92,7 +93,7 @@ export default function OwnerDashboard({
     if (!user) return;
     const { data } = await supabase
       .from("properties")
-      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price, availability, confirmed_at, share_code, property_type, media_urls, description, amenities, area_sqft, deposit, furnishing, availability_date, preferred_tenants, latitude")
+      .select("id, title, rent, bhk, address, created_at, status, rejection_reason, listing_type, sale_price, availability, confirmed_at, share_code, property_type, featured_until, media_urls, description, amenities, area_sqft, deposit, furnishing, availability_date, preferred_tenants, latitude")
       .eq("market", "india")
       .eq("landlord_id", user.id)
       .order("created_at", { ascending: false });
@@ -461,6 +462,7 @@ export default function OwnerDashboard({
                                 </button>
                               </>
                             )}
+                            {!isLetOut && <BoostListing listing={l} />}
                             {shareable && !isLetOut && (
                               <a href={whatsappShareUrl(shareable as any)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold hover:bg-green-600">
                                 <Share2 className="h-3.5 w-3.5" /> Share on WhatsApp
