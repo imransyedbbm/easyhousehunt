@@ -47,7 +47,7 @@ export default function RequirementModal({ onClose, properties }: { onClose: () 
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
           <div>
             <h2 className="font-bold text-lg">📝 {showForm ? (showForm.id ? "Edit requirement" : "Post your requirement") : "My requirements"}</h2>
-            <p className="text-xs text-gray-400">Tell us what you need. We'll alert you when a matching home is listed.</p>
+            <p className="text-xs text-gray-400">Tell us what you need. We'll alert you when a matching home is listed, plus a weekly roundup every Saturday.</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-xl" aria-label="Close">✕</button>
         </div>
